@@ -1513,7 +1513,11 @@
 
         try {
           const chunks = await AudioIDB.getAllChunks();
+          if (chunks.length > 0) {
+            Toast.show(`系統列隊：開始建檔與辨識 ${chunks.length} 筆語音切片...`, 'info');
+          }
           for (const item of chunks) {
+            Toast.show(`[第 ${item.chunkIndex} 段] 音檔上傳雲端與 AI 辨識中...`, 'info');
             const base64Data = await new Promise(res => {
               const reader = new FileReader();
               reader.onload = () => res(reader.result.split(',')[1]);
@@ -1530,14 +1534,32 @@
             if (response && response.transcript) {
               const txArea = document.getElementById('live-transcript');
               if (txArea) {
-                txArea.value = (txArea.value ? txArea.value + '\n' : '') + response.transcript;
+                // 直接刷新顯示後端重新組合的最新完整內容，防呆避免重複拼接
+                txArea.value = response.transcript;
               }
+              Toast.show(`[第 ${item.chunkIndex} 段] 語音建檔與試算表寫入成功！`);
             }
 
             await AudioIDB.deleteChunk(item.id);
           }
+          
+          // 如果錄音已停止且已處理完所有切片，重新拉取最新資料以確保精確同步
+          if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
+            const pId = StateStore.get('activeProject');
+            if (pId) {
+              const res = await ApiQueue.sendRequest('getInitialData', { projectId: pId });
+              if (res && res.projects) {
+                const currentProjectData = res.projects.find(p => String(p.projectId) === String(pId));
+                if (currentProjectData && document.getElementById('live-transcript')) {
+                  document.getElementById('live-transcript').value = currentProjectData.transcript || '';
+                  Toast.show('所有語音處理完畢，已精確同步試算表最新資料。');
+                }
+              }
+            }
+          }
         } catch (err) {
           console.warn('離線或背景傳輸中，切片保留於本地 IndexedDB', err);
+          Toast.show('處理異常: ' + err.message, 'error');
         } finally {
           this.isUploading = false;
         }
