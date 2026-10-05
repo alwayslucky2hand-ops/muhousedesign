@@ -2225,6 +2225,7 @@
                   inquiryId: selectedVal,
                   clientName: selectedOpt.getAttribute('data-name'),
                   phone: selectedOpt.getAttribute('data-phone'),
+                  address: selectedOpt.getAttribute('data-address') || '',
                   type: '老屋翻新' // 預設進線房型
                 });
                 if (createRes && createRes.projectId) {
@@ -2347,7 +2348,7 @@
             if (res.inquiries && res.inquiries.length > 0) {
               html += '<optgroup label="【待丈量】新客戶進線">';
               res.inquiries.forEach(iq => {
-                html += `<option value="${iq.id}" data-type="inquiry" data-name="${iq.name}" data-phone="${iq.phone}">[新進線] ${iq.name} - ${iq.phone}</option>`;
+                html += `<option value="${iq.id}" data-type="inquiry" data-name="${iq.name}" data-phone="${iq.phone}" data-address="${iq.address || ''}">[新進線] ${iq.name} - ${iq.phone}</option>`;
               });
               html += '</optgroup>';
             }
