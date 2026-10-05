@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>暮川設計訪談與報價中心</title>
+  <title>多模態設計訪談與急速報價中心 - 暮川設計</title>
   
   <!-- 引入 Google Fonts: Noto Sans TC (內文) + Noto Serif TC (合約主視覺明體) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -438,8 +438,8 @@
       <div class="hero-logo-sub">EVENSTREAM DESIGN</div>
     </div>
     <div class="hero-title-area">
-      <h1 class="hero-title brand-serif">暮川室內設計與報價中心</h1>
-      <div class="hero-subtitle brand-serif">設計報價系統</div>
+      <h1 class="hero-title brand-serif">多模態設計與報價中心</h1>
+      <div class="hero-subtitle brand-serif">室內設計承攬系統</div>
     </div>
   </header>
 
@@ -891,8 +891,18 @@
               .withFailureHandler(err => reject(err))
               .processServerAction(JSON.stringify(payload));
           } else {
-            fetch(GAS_WEB_URL, { method: 'POST', body: JSON.stringify(payload) })
-              .then(r => r.json()).then(res => resolve(res.data)).catch(reject); 
+            // 🌟 核心防護：在非 GAS 環境中，使用 Content-Type: text/plain 發送，避免觸發 CORS Preflight OPTIONS 阻擋
+            fetch(GAS_WEB_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(res => {
+              if (res && res.status === 'error') reject(new Error(res.message));
+              else resolve(res && res.data ? res.data : res);
+            })
+            .catch(reject);
           }
         });
       }
@@ -1453,13 +1463,15 @@
             : { mimeType: 'audio/webm' };
           this.mediaRecorder = new MediaRecorder(this.audioStream, options);
 
+          let currentChunkIndex = 1;
           this.mediaRecorder.ondataavailable = async (e) => {
             if (e.data && e.data.size > 0) {
               await AudioIDB.saveChunk({
                 projectId: StateStore.get('activeProject'),
                 blob: e.data,
                 mimeType: e.data.type || 'audio/webm',
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                chunkIndex: currentChunkIndex++
               });
               this.uploadPendingChunks();
             }
@@ -1511,7 +1523,8 @@
             const response = await ApiQueue.sendRequest('processAudioSlice', {
               projectId: item.projectId,
               base64Data: base64Data,
-              mimeType: item.mimeType
+              mimeType: item.mimeType,
+              chunkIndex: item.chunkIndex || 1
             });
 
             if (response && response.transcript) {
