@@ -1248,17 +1248,32 @@
         this.activeInquiryIdx = idx; this.renderInquiries();
       },
       updateField(idx, field, val) { StateStore.state.contractorInquiries[idx][field] = val; },
-      autoGenerateFromMaterials() {
+      async autoGenerateFromMaterials() {
+        const pId = StateStore.get('activeProject');
+        if(!pId) return Toast.show('請選擇專案', 'error');
+        
         const records = StateStore.get('interviewRecords');
-        if(records.length === 0 || !records[StateStore.state.activeRecordIdx]) return Toast.show('選材區尚無資料', 'error');
-        const mats = records[StateStore.state.activeRecordIdx].materials || [];
-        if(mats.length === 0) return Toast.show('無選材可拋轉', 'error');
+        if(records.length === 0) return Toast.show('選材區尚無紀錄', 'error');
 
-        let text = "您好，請協助評估以下項目：\n";
-        mats.forEach((m, i) => text += `${i+1}. [${m.space}-${m.zone}] ${m.material} (${m.qty}${m.unit})\n`);
-        StateStore.state.contractorInquiries.push({ category: '綜合工程', contractor: '', lineId: '', inquiryText: text, chatHistory: '' });
-        this.activeInquiryIdx = StateStore.state.contractorInquiries.length - 1;
-        this.renderInquiries(); Toast.show('已載入詢價內容');
+        Toast.show('AI 統包設計師分析與發包策略擬定中...', 'info');
+        
+        try {
+          const res = await ApiQueue.sendRequest('generateSmartInquiries', { 
+            projectId: pId, 
+            records: records 
+          });
+          
+          if(res && res.inquiries && res.inquiries.length > 0) {
+            StateStore.state.contractorInquiries = StateStore.state.contractorInquiries.concat(res.inquiries);
+            this.activeInquiryIdx = StateStore.state.contractorInquiries.length - 1;
+            this.renderInquiries(); 
+            Toast.show('AI 智能發包規劃完成，已產生工班詢價單');
+          } else {
+            Toast.show('AI 無法產出有效發包', 'error');
+          }
+        } catch(err) {
+          Toast.show('智能發包失敗: ' + err.message, 'error');
+        }
       },
       sendToLine(idx) {
         const text = StateStore.state.contractorInquiries[idx].inquiryText;
@@ -1308,8 +1323,8 @@
       saveAllCosts() {
          const pId = StateStore.get('activeProject'); if(!pId) return Toast.show('請選擇專案', 'error');
          Toast.show('儲存中...', 'info');
-         ApiQueue.sendRequest('batchOcrContractors', { projectId: pId, items: StateStore.state.contractorOcrItems })
-           .then(() => Toast.show('成本已儲存')).catch(() => Toast.show('儲存失敗', 'error'));
+         ApiQueue.sendRequest('saveContractorCosts', { projectId: pId, items: StateStore.state.contractorOcrItems })
+           .then(() => Toast.show('專案成本已成功寫入資料庫')).catch(() => Toast.show('儲存失敗', 'error'));
       },
       renderInquiries() {
         const container = document.getElementById('cost-inquiries-container');
