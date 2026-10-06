@@ -1418,7 +1418,24 @@
       }
     };
 
-    const ProjectManager = { submitNew(){}, saveTextField(){Toast.show('已儲存');}, generateAnalysis(type){Toast.show('AI解析中...', 'info');} };
+    const ProjectManager = {
+      submitNew() {},
+      async saveTextField(field, elementId) {
+        const pId = StateStore.get('activeProject');
+        if (!pId) return Toast.show('請先選擇專案', 'error');
+        const val = document.getElementById(elementId).value;
+        Toast.show('儲存中...', 'info');
+        try {
+          await ApiQueue.sendRequest('updateProjectText', { projectId: pId, field: field, text: val });
+          Toast.show('儲存成功');
+        } catch (err) {
+          Toast.show('儲存失敗: ' + err.message, 'error');
+        }
+      },
+      generateAnalysis(type) {
+        Toast.show('功能建置中...', 'info');
+      }
+    };
     
     // 模組二：IndexedDB 音訊切片離線緩存庫
     const AudioIDB = {
