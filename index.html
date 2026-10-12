@@ -1073,18 +1073,39 @@
 
       async analyzeImages(idx) {
         const record = StateStore.state.interviewRecords[idx];
-        if(!record.images || record.images.length === 0) return Toast.show('請上傳圖', 'error');
-        Toast.show('AI 解析中...', 'info');
+        if(!record.images || record.images.length === 0) return Toast.show('請先上傳圖片', 'error');
+        Toast.show('AI 視覺深度解析中...', 'info');
         try {
-          const base64Str = record.images[record.currentImageIdx].split(',')[1];
-          const res = await ApiQueue.sendRequest('processDesignFileOcr', { projectId: StateStore.get('activeProject'), fileBase64: base64Str, mimeType: 'image/jpeg' });
-          if(res) {
-            record.description = (res.pages && res.pages[0]) ? res.pages[0].summary : '自動解析特徵完成。';
-            record.proExplanation = '建議選用低甲醛板材，收邊細節搭配現代簡約。';
-            this.renderRecordsList();
-            Toast.show('解析完成');
+          const imgData = record.images[record.currentImageIdx];
+          let fileId = '';
+          let base64Str = '';
+          
+          if (imgData.includes('/d/')) {
+            const match = imgData.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if(match) fileId = match[1];
+          } else if (imgData.includes(',')) {
+            base64Str = imgData.split(',')[1];
+          } else {
+            base64Str = imgData;
           }
-        } catch(err) { Toast.show('失敗', 'error'); }
+
+          const res = await ApiQueue.sendRequest('processDesignFileOcr', { 
+            projectId: StateStore.get('activeProject'), 
+            fileId: fileId,
+            fileBase64: base64Str, 
+            mimeType: 'image/jpeg' 
+          });
+          
+          if(res) {
+            record.description = res.description || '自動解析特徵完成。';
+            record.proExplanation = res.proExplanation || '建議選用低甲醛板材，收邊細節搭配現代簡約。';
+            this.renderRecordsList();
+            Toast.show('解析完成，已寫入紀錄');
+          }
+        } catch(err) { 
+          Toast.show('解析失敗: ' + err.message, 'error'); 
+          console.error(err); 
+        }
       },
 
       extractToMaterials(idx) {
