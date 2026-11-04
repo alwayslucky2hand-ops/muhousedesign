@@ -132,6 +132,113 @@
     .subtab-btn.active { color: var(--line-dark); border-bottom-color: var(--line-dark); font-weight: 600; }
 
      
+    .mobile-header-nav {
+      display: none;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      border-bottom: 1px solid var(--line-dark);
+      padding: 12px 0;
+      margin-bottom: 20px;
+      background: #FFFFFF;
+    }
+    .mobile-nav-current {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--text-primary);
+    }
+    .btn-hamburger {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #FFFFFF;
+      border: 1px solid var(--line-dark);
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    .btn-hamburger:hover { background: #FAFAFA; }
+
+     
+    .mobile-drawer-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .mobile-drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .mobile-drawer {
+      position: fixed;
+      top: 0; left: -280px;  
+      width: 260px;
+      height: 100%;
+      background: #FFFFFF;
+      border-right: 1px solid var(--line-dark);  
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+      transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mobile-drawer.active { left: 0; }
+    .mobile-drawer-header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line-light);
+    }
+
+     
+    .btn-icon-only {
+      padding: 0 14px !important;
+      min-width: 42px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .mobile-drawer-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .mobile-drawer-list {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 0;
+    }
+    .mobile-drawer-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      border: none;
+      background: #FFFFFF;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-align: left;
+      border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .mobile-drawer-item.active {
+      color: var(--text-primary);
+      font-weight: 600;
+      background: #FAFAFA;
+      border-left-color: var(--line-dark);
+    }
+
+     
     .view-grid-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
     @media (min-width: 1024px) {
        
@@ -177,11 +284,42 @@
     }
 
     @media (max-width: 1023px) {
-      .app-main { padding: 20px 16px; }
-      .hero-visual { padding: 24px 20px; min-height: 150px; }
-      .hero-title { font-size: 1.4rem; letter-spacing: 2px; }
-      .subtabs-nav { gap: 24px; margin-bottom: 20px; }
-      .subtab-btn { white-space: nowrap; flex-shrink: 0; font-size: 0.95rem; padding: 12px 0; }
+      .app-main { padding: 16px 14px; }
+      .hero-visual { padding: 20px 16px; min-height: 130px; }
+      .hero-title { font-size: 1.3rem; letter-spacing: 2px; }
+      
+       
+      .subtabs-nav { display: none !important; }
+      .mobile-header-nav { display: flex; }
+
+      .mobile-design-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        border: 1px solid var(--line-dark);
+        background: #FFFFFF;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .mobile-tab-btn {
+        flex: 1;
+        padding: 11px 6px;
+        text-align: center;
+        font-weight: 500;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+        background: #FFFFFF;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .mobile-tab-btn.active {
+        background: var(--line-dark);
+        color: #FFFFFF;
+        font-weight: 600;
+      }
       .mobile-design-tabs {
         display: flex;
         gap: 0;
@@ -683,15 +821,13 @@
     
     <div class="toolbar">
       
-      <button class="pill" style="border-color: var(--line-dark); color: var(--text-primary); font-weight: 600;" onclick="AppMode.setNewMode()">
-        <i data-lucide="folder-plus" style="width:16px;"></i> 新建專案
+      <button class="pill btn-icon-only" style="border-color: var(--line-dark); color: var(--text-primary);" onclick="AppMode.setNewMode()" title="新建專案">
+        <i data-lucide="plus" style="width:18px;"></i>
       </button>
       
       
-      <div style="width: 1px; height: 20px; background-color: var(--line-light); margin: 0 8px;"></div>
+      <div style="width: 1px; height: 20px; background-color: var(--line-light); margin: 0 4px;"></div>
       
-      
-      <span style="font-size: 0.85rem; color: var(--text-secondary);">切換案場：</span>
       <select id="select-active-project" class="select-minimal">
         <option value="">選擇專案...</option>
       </select>
@@ -709,22 +845,52 @@
       </nav>
 
       
+      <div class="mobile-header-nav">
+        <button class="btn-hamburger" onclick="MobileNav.openDrawer()" title="模組選單">
+          <i data-lucide="menu" style="width:20px;"></i>
+        </button>
+        <div class="mobile-nav-current" id="mobile-nav-current-display">
+          <i data-lucide="layers" style="width:18px;"></i>
+          <span id="mobile-current-title">選材</span>
+        </div>
+      </div>
+
+      
+      <div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="MobileNav.closeDrawer()"></div>
+      <div class="mobile-drawer" id="mobile-drawer">
+        <div class="mobile-drawer-header">
+          <span class="mobile-drawer-title">功能模組</span>
+          <button class="btn" style="min-height:30px; padding:0 8px; border:none;" onclick="MobileNav.closeDrawer()">
+            <i data-lucide="x" style="width:18px;"></i>
+          </button>
+        </div>
+        <div class="mobile-drawer-list">
+          <button class="mobile-drawer-item" data-tab="tab-audio" onclick="MobileNav.selectTab('tab-audio', '丈量', 'mic')"><i data-lucide="mic"></i> 丈量</button>
+          <button class="mobile-drawer-item active" data-tab="tab-design" onclick="MobileNav.selectTab('tab-design', '選材', 'layers')"><i data-lucide="layers"></i> 選材</button>
+          <button class="mobile-drawer-item" data-tab="tab-ocr" onclick="MobileNav.selectTab('tab-ocr', '成本', 'file-text')"><i data-lucide="file-text"></i> 成本</button>
+          <button class="mobile-drawer-item" data-tab="tab-quote" onclick="MobileNav.selectTab('tab-quote', '報價', 'check-square')"><i data-lucide="check-square"></i> 報價</button>
+          <button class="mobile-drawer-item" data-tab="tab-profit" onclick="MobileNav.selectTab('tab-profit', '毛利', 'pie-chart')"><i data-lucide="pie-chart"></i> 毛利</button>
+          <button class="mobile-drawer-item" data-tab="tab-legal" onclick="MobileNav.selectTab('tab-legal', '法務', 'scale')"><i data-lucide="scale"></i> 法務</button>
+        </div>
+      </div>
+
+      
       <div id="tab-audio" class="tab-content-panel">
         <div class="mobile-design-tabs">
-          <button class="mobile-tab-btn active" id="btn-audio-mobile-left" onclick="AudioManager.switchMobileTab('left')">錄音與逐字稿</button>
-          <button class="mobile-tab-btn" id="btn-audio-mobile-right" onclick="AudioManager.switchMobileTab('right')">AI 總結與注意</button>
+          <button class="mobile-tab-btn active" id="btn-audio-mobile-left" onclick="AudioManager.switchMobileTab('left')">錄音</button>
+          <button class="mobile-tab-btn" id="btn-audio-mobile-right" onclick="AudioManager.switchMobileTab('right')">分析</button>
         </div>
 
         <div id="audio-workspace-panel" class="view-grid-layout">
           <div id="audio-panel-left" class="design-panel active">
-            <div style="border: 1px dashed var(--line-light); padding: 32px; text-align: center; margin-bottom: 32px; background:#FFF;">
+            <div style="border: 1px dashed var(--line-light); padding: 24px; text-align: center; margin-bottom: 24px; background:#FFF;">
               <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;">
-                <button id="btn-record" class="btn btn-primary" onclick="AudioManager.startRecord()"><i data-lucide="mic"></i> 錄音</button>
-                <button id="btn-stop" class="btn" onclick="AudioManager.stopRecord()" disabled><i data-lucide="square"></i> 停止</button>
-                <button id="btn-transcribe" class="btn" onclick="AudioManager.transcribeAllChunks()" style="border-color:var(--line-dark); font-weight:600;"><i data-lucide="cpu"></i> AI 解析逐字稿</button>
+                <button id="btn-record" class="btn btn-primary btn-icon-only" onclick="AudioManager.startRecord()" title="開始錄音"><i data-lucide="mic"></i></button>
+                <button id="btn-stop" class="btn btn-icon-only" onclick="AudioManager.stopRecord()" disabled title="停止錄音"><i data-lucide="square"></i></button>
+                <button id="btn-transcribe" class="btn btn-icon-only" onclick="AudioManager.transcribeAllChunks()" style="border-color:var(--line-dark);" title="語音解析"><i data-lucide="cpu"></i></button>
               </div>
-              <div id="audio-timer" style="font-size:2rem; font-family:'Inter', sans-serif; font-weight:300; margin-top:16px;">00:00</div>
-              <div id="audio-bg-hint" style="font-size:0.78rem; color:var(--text-secondary); margin-top:8px;">支援手機滑開/鎖屏與電腦背景錄音，錄音中每 30 秒自動建檔至雲端，錄音後按「AI 解析逐字稿」才開始辨識</div>
+              <div id="audio-timer" style="font-size:2rem; font-family:'Inter', sans-serif; font-weight:300; margin-top:12px;">00:00</div>
+              <div id="audio-bg-hint" style="font-size:0.8rem; color:var(--text-secondary); margin-top:6px;">錄音每 30 秒自動備份，點擊處理圖標開始聽打。</div>
             </div>
             
             <div class="quote-item-card">
@@ -733,7 +899,7 @@
                   <h3>逐字稿</h3>
                   <span id="audio-slice-status" style="font-size:0.82rem; color:var(--text-secondary); font-weight:400;"></span>
                 </div>
-                <button class="btn" style="min-height:32px;" onclick="AudioManager.syncEditorToTextarea(); ProjectManager.saveTextField('transcript', 'live-transcript')">儲存</button>
+                <button class="btn btn-icon-only" style="min-height:32px;" onclick="AudioManager.syncEditorToTextarea(); ProjectManager.saveTextField('transcript', 'live-transcript')" title="儲存逐字稿"><i data-lucide="save"></i></button>
               </div>
               <div id="live-transcript-editor" class="spec-input" contenteditable="true" style="border:none; min-height:220px; max-height:520px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.75;" oninput="AudioManager.syncEditorToTextarea()" onblur="AudioManager.syncEditorToTextarea()"></div>
               <textarea id="live-transcript" class="spec-input" style="display:none;"></textarea>
@@ -742,7 +908,7 @@
             <div class="quote-item-card">
               <div class="item-card-header">
                 <h3>注記</h3>
-                <button class="btn" style="min-height:32px;" onclick="ProjectManager.saveTextField('notes', 'live-notes')">儲存</button>
+                <button class="btn btn-icon-only" style="min-height:32px;" onclick="ProjectManager.saveTextField('notes', 'live-notes')" title="儲存注記"><i data-lucide="save"></i></button>
               </div>
               <textarea id="live-notes" class="spec-input" style="border:none; min-height:120px;"></textarea>
             </div>
@@ -750,19 +916,23 @@
 
           <div id="audio-panel-right" class="design-panel panel-sticky">
             <div class="metric-card">
-              <div style="display:flex; gap:16px; margin-bottom:24px;">
-                <button class="btn btn-primary" onclick="ProjectManager.generateAnalysis('summary')" style="flex:1;"><i data-lucide="cpu"></i> 總結</button>
-                <button class="btn btn-primary" onclick="ProjectManager.generateAnalysis('warning')" style="flex:1;"><i data-lucide="alert-circle"></i> 注意</button>
+              <div style="display:flex; gap:12px; margin-bottom:20px;">
+                <button class="btn btn-primary btn-icon-only" onclick="ProjectManager.generateAnalysis('summary')" style="flex:1;" title="提煉專案總結"><i data-lucide="file-text"></i></button>
+                <button class="btn btn-primary btn-icon-only" onclick="ProjectManager.generateAnalysis('warning')" style="flex:1;" title="分析工程風險"><i data-lucide="alert-triangle"></i></button>
               </div>
               <div class="input-field-group">
-                <label class="input-field-label">專案總結</label>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label class="input-field-label">專案總結</label>
+                  <button class="btn btn-icon-only" style="min-height:26px; border:none;" onclick="ProjectManager.saveTextField('summary', 'box-summary')" title="儲存總結"><i data-lucide="save" style="width:16px;"></i></button>
+                </div>
                 <textarea id="box-summary" class="spec-input"></textarea>
-                <button class="btn" style="margin-top:12px;" onclick="ProjectManager.saveTextField('summary', 'box-summary')">儲存總結</button>
               </div>
-              <div class="input-field-group" style="margin-top:24px;">
-                <label class="input-field-label">防禦與注意</label>
+              <div class="input-field-group" style="margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label class="input-field-label">防禦與注意</label>
+                  <button class="btn btn-icon-only" style="min-height:26px; border:none;" onclick="ProjectManager.saveTextField('warning', 'box-warning')" title="儲存注意"><i data-lucide="save" style="width:16px;"></i></button>
+                </div>
                 <textarea id="box-warning" class="spec-input"></textarea>
-                <button class="btn" style="margin-top:12px;" onclick="ProjectManager.saveTextField('warning', 'box-warning')">儲存注意</button>
               </div>
             </div>
           </div>
@@ -779,7 +949,7 @@
         <div class="view-grid-layout design-split">
           
           <div id="design-panel-left" class="design-panel active">
-            <button class="btn btn-primary" onclick="DesignManager.addNewRecord()" style="width:100%; margin-bottom:24px;"><i data-lucide="plus"></i> 新增紀錄</button>
+            <button class="btn btn-primary btn-icon-only" onclick="DesignManager.addNewRecord()" style="width:100%; margin-bottom:20px;" title="新增洽談紀錄"><i data-lucide="plus"></i></button>
             <div id="design-records-container"></div>
           </div>
           
@@ -788,7 +958,10 @@
             <div class="quote-item-card table-card" style="border:none; display:flex; flex-direction:column; max-height:85vh;">
               <div class="item-card-header">
                 <h3 id="current-record-title">選材清單</h3>
-                <button class="btn" style="border:none;" onclick="DesignManager.addEmptyMaterial()" title="新增"><i data-lucide="plus"></i> 新增</button>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-icon-only" style="border:none;" onclick="DesignManager.addEmptyMaterial()" title="新增工項"><i data-lucide="plus"></i></button>
+                  <button class="btn btn-icon-only" style="border:none;" onclick="DesignManager.saveCurrentRecord()" title="儲存清單"><i data-lucide="save"></i></button>
+                </div>
               </div>
               
               <div class="material-table-wrapper" style="flex:1;">
@@ -807,14 +980,8 @@
                       <th style="width:40px;"></th>
                     </tr>
                   </thead>
-                  <tbody id="design-materials-tbody">
-                    
-                  </tbody>
+                  <tbody id="design-materials-tbody"></tbody>
                 </table>
-              </div>
-              
-              <div style="padding:24px 32px; border-top:1px solid var(--line-light);">
-                <button class="btn btn-primary" onclick="DesignManager.saveCurrentRecord()" style="width:100%;">儲存清單</button>
               </div>
             </div>
           </div>
@@ -824,17 +991,17 @@
       
       <div id="tab-ocr" class="tab-content-panel">
         <div class="mobile-design-tabs">
-          <button class="mobile-tab-btn active" id="btn-ocr-mobile-left" onclick="CostManager.switchMobileTab('left')">工班詢價與解析</button>
-          <button class="mobile-tab-btn" id="btn-ocr-mobile-right" onclick="CostManager.switchMobileTab('right')">專案成本清單</button>
+          <button class="mobile-tab-btn active" id="btn-ocr-mobile-left" onclick="CostManager.switchMobileTab('left')">詢價</button>
+          <button class="mobile-tab-btn" id="btn-ocr-mobile-right" onclick="CostManager.switchMobileTab('right')">成本</button>
         </div>
 
         <div class="view-grid-layout design-split">
           
           <div id="ocr-panel-left" class="design-panel active">
-            <div style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
-              <button class="btn btn-primary" style="flex:1; min-width:110px;" onclick="CostManager.autoGenerateFromMaterials()"><i data-lucide="sparkles"></i> AI 解析</button>
-              <button class="btn" style="flex:1; min-width:90px;" onclick="CostManager.addInquiry()"><i data-lucide="plus"></i> 新增</button>
-              <button class="btn" style="flex:1; min-width:120px; border-color:var(--line-dark) !important; font-weight:600;" onclick="CostManager.importAllToCostTable(this)"><i data-lucide="chevrons-right"></i> 全部導入</button>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+              <button class="btn btn-primary btn-icon-only" style="flex:1;" onclick="CostManager.autoGenerateFromMaterials()" title="智慧發包"><i data-lucide="sparkles"></i></button>
+              <button class="btn btn-icon-only" style="flex:1;" onclick="CostManager.addInquiry()" title="新增詢價"><i data-lucide="plus"></i></button>
+              <button class="btn btn-icon-only" style="flex:1; border-color:var(--line-dark) !important;" onclick="CostManager.importAllToCostTable(this)" title="全量導入"><i data-lucide="chevrons-right"></i></button>
             </div>
             <div id="cost-inquiries-container"></div>
           </div>
@@ -843,7 +1010,10 @@
             <div class="quote-item-card table-card" style="border:none; overflow:hidden; display:flex; flex-direction:column; max-height:85vh;">
               <div class="item-card-header">
                 <h3>專案成本清單</h3>
-                <button class="btn" style="border:none;" onclick="CostManager.addEmptyCostItem()"><i data-lucide="plus"></i> 新增</button>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-icon-only" style="border:none;" onclick="CostManager.addEmptyCostItem()" title="新增成本工項"><i data-lucide="plus"></i></button>
+                  <button class="btn btn-icon-only" style="border:none;" onclick="CostManager.saveAllCosts()" title="儲存成本"><i data-lucide="save"></i></button>
+                </div>
               </div>
               <div class="material-table-wrapper" style="flex:1;">
                 <table class="material-table">
@@ -865,9 +1035,6 @@
                   </tbody>
                 </table>
               </div>
-              <div style="padding:24px 32px; border-top:1px solid var(--line-light);">
-                <button class="btn btn-primary" style="width:100%;" onclick="CostManager.saveAllCosts()">儲存成本</button>
-              </div>
             </div>
           </div>
         </div>
@@ -876,17 +1043,17 @@
       
       <div id="tab-quote" class="tab-content-panel">
         <div class="mobile-design-tabs">
-          <button class="mobile-tab-btn active" id="btn-quote-mobile-left" onclick="QuoteManager.switchMobileTab('left')">報價草稿設定</button>
-          <button class="mobile-tab-btn" id="btn-quote-mobile-right" onclick="QuoteManager.switchMobileTab('right')">報價資訊總表</button>
+          <button class="mobile-tab-btn active" id="btn-quote-mobile-left" onclick="QuoteManager.switchMobileTab('left')">草稿</button>
+          <button class="mobile-tab-btn" id="btn-quote-mobile-right" onclick="QuoteManager.switchMobileTab('right')">總表</button>
         </div>
 
         <div class="view-grid-layout design-split">
           
           <div id="quote-panel-left" class="design-panel active" style="padding-bottom:24px;">
-            <div style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
-              <button class="btn btn-primary" style="flex:1; min-width:110px;" onclick="QuoteManager.aiGenerateDraft(event)"><i data-lucide="sparkles"></i> AI 報價</button>
-              <button class="btn" style="flex:1; min-width:90px;" onclick="QuoteManager.addBlock()"><i data-lucide="plus"></i> 新增</button>
-              <button class="btn" style="flex:1; min-width:120px; border-color:var(--line-dark) !important; font-weight:600;" onclick="QuoteManager.importAllToRight()"><i data-lucide="chevrons-right"></i> 全部導入</button>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+              <button class="btn btn-primary btn-icon-only" style="flex:1;" onclick="QuoteManager.aiGenerateDraft(event)" title="智慧估價"><i data-lucide="sparkles"></i></button>
+              <button class="btn btn-icon-only" style="flex:1;" onclick="QuoteManager.addBlock()" title="新增工項"><i data-lucide="plus"></i></button>
+              <button class="btn btn-icon-only" style="flex:1; border-color:var(--line-dark) !important;" onclick="QuoteManager.importAllToRight()" title="全量導入"><i data-lucide="chevrons-right"></i></button>
             </div>
             <div id="quote-blocks-container"></div>
           </div>
@@ -895,7 +1062,10 @@
             <div class="quote-item-card table-card" style="border:none; display:flex; flex-direction:column; max-height:85vh;">
               <div class="item-card-header">
                 <h3>報價資訊總表</h3>
-                <button class="btn" style="border:none;" onclick="QuoteManager.addEmptyRow()"><i data-lucide="plus"></i> 新增</button>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-icon-only" style="border:none;" onclick="QuoteManager.addEmptyRow()" title="新增報價工項"><i data-lucide="plus"></i></button>
+                  <button class="btn btn-icon-only" style="border:none;" onclick="QuoteManager.saveAll(false)" title="儲存報價"><i data-lucide="save"></i></button>
+                </div>
               </div>
               <div class="material-table-wrapper" style="flex:1;">
                 <table class="material-table">
@@ -955,33 +1125,37 @@
           <div class="item-card-header" style="flex-wrap:wrap; gap:16px; padding: 20px 32px 14px 32px; border-bottom:1px solid var(--line-light);">
             <div>
               <h3>估價單文件 A4 即時預覽</h3>
-              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">採實體 A4 規格展示，支援頁籤切換與前後翻頁；匯出 PDF 自動多頁分工種印製</div>
+              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">即時連動試算，支援依工種分頁瀏覽與匯出。</div>
             </div>
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
               <div>
-                <span class="input-field-label" style="margin-right:6px;">特別折讓($)</span>
-                <input type="number" id="profit-input-discount" class="spec-input" value="0" style="width:110px; display:inline-block; min-height:34px;" oninput="ProfitManager.renderPreview()">
+                <span class="input-field-label" style="margin-right:4px;">折讓</span>
+                <input type="number" id="profit-input-discount" class="spec-input" value="0" style="width:90px; display:inline-block; min-height:34px;" oninput="ProfitManager.renderPreview()">
               </div>
               <div>
-                <span class="input-field-label" style="margin-right:6px;">監工管理費(%)</span>
-                <input type="number" id="profit-input-fee" class="spec-input" value="8" style="width:72px; display:inline-block; min-height:34px;" oninput="ProfitManager.renderPreview()">
+                <span class="input-field-label" style="margin-right:4px;">管理費%</span>
+                <input type="number" id="profit-input-fee" class="spec-input" value="8" style="width:64px; display:inline-block; min-height:34px;" oninput="ProfitManager.renderPreview()">
               </div>
-              <label style="font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
-                <input type="checkbox" id="profit-include-tax" checked onchange="ProfitManager.applyProfitRecalculation()"> 加計 5% 營業稅
+              <label style="font-size:0.85rem; display:inline-flex; align-items:center; gap:4px; cursor:pointer; user-select:none;">
+                <input type="checkbox" id="profit-include-tax" checked onchange="ProfitManager.applyProfitRecalculation()"> 5% 營業稅
               </label>
-              <button class="btn btn-primary" onclick="ProfitManager.applyProfitRecalculation()"><i data-lucide="calculator"></i> 精算並同步法務</button>
-              <button class="btn" style="border-color:var(--line-dark); font-weight:600;" onclick="ProfitManager.exportPDF()"><i data-lucide="download"></i> 匯出估價單 PDF</button>
+              <button class="btn btn-primary btn-icon-only" onclick="ProfitManager.applyProfitRecalculation()" title="毛利精算"><i data-lucide="calculator"></i></button>
+              <button class="btn btn-icon-only" style="border-color:var(--line-dark);" onclick="ProfitManager.exportPDF()" title="匯出 PDF"><i data-lucide="download"></i></button>
             </div>
           </div>
 
           
           <div style="display:flex; justify-content:space-between; align-items:center; padding: 14px 32px 10px 32px; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <button class="btn" style="min-height:30px; padding:0 12px; font-size:0.85rem;" onclick="ProfitManager.prevPage()">上一頁</button>
-              <span id="profit-page-indicator" style="font-size:0.85rem; font-weight:600; color:#111111;">1 / 1 頁（工程項目總表）</span>
-              <button class="btn" style="min-height:30px; padding:0 12px; font-size:0.85rem;" onclick="ProfitManager.nextPage()">下一頁</button>
+            <div style="display:inline-flex; align-items:center; gap:10px; background:#FFFFFF; padding:4px 6px; border:1px solid var(--line-light); flex-wrap:nowrap;">
+              <button class="btn btn-icon-only" style="min-height:30px; width:34px; height:30px; padding:0; border:none;" onclick="ProfitManager.prevPage()" title="上一頁">
+                <i data-lucide="chevron-left" style="width:16px;"></i>
+              </button>
+              <span id="profit-page-indicator" style="font-size:0.85rem; font-weight:600; color:#111111; white-space:nowrap; padding:0 4px;">1 / 1 頁（工程項目總表）</span>
+              <button class="btn btn-icon-only" style="min-height:30px; width:34px; height:30px; padding:0; border:none;" onclick="ProfitManager.nextPage()" title="下一頁">
+                <i data-lucide="chevron-right" style="width:16px;"></i>
+              </button>
             </div>
-            <div style="font-size:0.82rem; color:var(--text-secondary);">點選下方頁籤或翻頁按鈕切換各工種 A4 紙張</div>
+            <div style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">點選工種頁籤或翻頁按鈕切換 A4 紙張</div>
           </div>
 
           
@@ -1001,17 +1175,26 @@
             <div class="item-card-header" style="margin-bottom: 20px; padding-bottom: 14px; flex-wrap:wrap; gap:12px;">
               <div>
                 <h3>法務生成參數中樞</h3>
-                <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">修改下方任一欄位將即時渲染 A4 合約內文；工程總價自動連動毛利頁精算結果</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">參數即時同步 A4 合約條款，總價自動對齊毛利頁。</div>
               </div>
-              <div style="display:flex; gap:12px; align-items:center;">
-                <select id="legal-stage-mode" class="spec-input" style="width:auto; min-height:38px; font-size:0.85rem;" onchange="LegalManager.renderA4Preview()">
-                  <option value="5">工程款 5 期制 (30/20/20/20/10%)</option>
-                  <option value="4">工程款 4 期制 (30/30/30/10% 對齊試算表)</option>
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                
+                <select id="legal-stage-preset" class="spec-input" style="width:auto; min-height:38px; font-size:0.85rem;" onchange="LegalManager.applyStagePreset(this.value)" title="常用期數預設">
+                  <option value="5">5期 (30/20/20/20/10%)</option>
+                  <option value="4">4期 (30/30/30/10%)</option>
+                  <option value="3">3期 (40/30/30%)</option>
+                  <option value="custom">自訂期數</option>
                 </select>
-                <button class="btn btn-primary" onclick="LegalManager.compileContracts()">
-                  <i data-lucide="file-text"></i> 一鍵編譯 Docs / PDF 並寫入總表
-                </button>
+                
+                <button class="btn btn-icon-only" onclick="LegalManager.addStage()" title="增加一期"><i data-lucide="plus"></i></button>
+                <button class="btn btn-icon-only" onclick="LegalManager.removeStage()" title="減少一期"><i data-lucide="minus"></i></button>
+                <button class="btn btn-primary btn-icon-only" onclick="LegalManager.compileContracts()" title="編譯合約文件"><i data-lucide="file-check"></i></button>
               </div>
+            </div>
+
+            
+            <div id="legal-stages-config-box" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:12px 16px; border:1px solid var(--line-light); background:#FAFAFA; margin-bottom:16px;">
+              
             </div>
 
             
@@ -1070,14 +1253,18 @@
           
           
           <div class="quote-item-card table-card" style="border:none; display:flex; flex-direction:column;">
-            <div class="item-card-header" style="border-bottom:none; margin-bottom:0; display:flex; justify-content:space-between; align-items:center; padding: 16px 32px 8px 32px;">
-              <h3>合約文件 A4 即時預覽</h3>
+            <div class="item-card-header" style="border-bottom:none; margin-bottom:0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding: 16px 32px 8px 32px;">
+              <h3 style="white-space:nowrap; margin:0;">合約文件 A4 即時預覽</h3>
               
               
-              <div style="display:flex; align-items:center; gap:12px;">
-                <button class="btn" style="min-height:30px; padding:0 12px; font-size:0.85rem;" onclick="LegalManager.prevPage()">◀ 上一頁</button>
-                <span id="legal-page-indicator" style="font-size:0.85rem; font-weight:600; color:#111;">1 / 5 頁（設計合約封面）</span>
-                <button class="btn" style="min-height:30px; padding:0 12px; font-size:0.85rem;" onclick="LegalManager.nextPage()">下一頁 ▶</button>
+              <div style="display:inline-flex; align-items:center; gap:10px; background:#FFFFFF; padding:4px 6px; border:1px solid var(--line-light); flex-wrap:nowrap;">
+                <button class="btn btn-icon-only" style="min-height:30px; width:34px; height:30px; padding:0; border:none;" onclick="LegalManager.prevPage()" title="上一頁">
+                  <i data-lucide="chevron-left" style="width:16px;"></i>
+                </button>
+                <span id="legal-page-indicator" style="font-size:0.85rem; font-weight:600; color:#111111; white-space:nowrap; padding:0 4px;">1 / 5 頁（設計合約封面）</span>
+                <button class="btn btn-icon-only" style="min-height:30px; width:34px; height:30px; padding:0; border:none;" onclick="LegalManager.nextPage()" title="下一頁">
+                  <i data-lucide="chevron-right" style="width:16px;"></i>
+                </button>
               </div>
 
               <div id="legal-export-links" style="display:flex; gap:10px;"></div>
@@ -1639,15 +1826,15 @@
                   <input type="text" class="spec-input" value="${r.title}" onblur="DesignManager.updateField(${i},'title',this.value)">
                 </div>
                 
-                <div style="display:flex; justify-content:space-between; margin:24px 0 12px 0; align-items:center;">
+                <div style="display:flex; justify-content:space-between; margin:20px 0 10px 0; align-items:center;">
                   <label class="input-field-label">視覺參考圖</label>
-                  <button class="btn" style="min-height:32px;" onclick="document.getElementById('upload-img-${i}').click()"><i data-lucide="upload"></i> 上傳</button>
+                  <button class="btn btn-icon-only" style="min-height:30px;" onclick="document.getElementById('upload-img-${i}').click()" title="上傳圖檔"><i data-lucide="upload"></i></button>
                   <input type="file" id="upload-img-${i}" multiple accept="image/*" style="display:none;" onchange="DesignManager.handleImageUpload(this, ${i})">
                 </div>
                 <div class="carousel-container">${carouselHtml}</div>
 
-                <button id="btn-analyze-${i}" class="btn" style="width:100%; margin-bottom:24px;" onclick="DesignManager.analyzeImages(${i})">
-                  <i data-lucide="sparkles"></i> AI 視覺解析
+                <button id="btn-analyze-${i}" class="btn btn-icon-only" style="width:100%; margin-bottom:20px;" onclick="DesignManager.analyzeImages(${i})" title="AI 視覺解析">
+                  <i data-lucide="sparkles"></i>
                 </button>
                 
                 <div class="input-field-group">
@@ -1659,9 +1846,9 @@
                   <textarea id="pro-${i}" class="spec-input" onblur="DesignManager.updateField(${i},'proExplanation',this.value)">${r.proExplanation}</textarea>
                 </div>
 
-                <div style="display:flex; gap:16px; margin-top:32px;">
-                  <button class="btn btn-primary" style="flex:1;" onclick="DesignManager.manualSaveRecord(${i})">儲存</button>
-                  <button class="btn" style="flex:1;" onclick="DesignManager.extractToMaterials(${i}, event)"><i data-lucide="arrow-right"></i> 提取選材</button>
+                <div style="display:flex; gap:12px; margin-top:24px;">
+                  <button class="btn btn-primary btn-icon-only" style="flex:1;" onclick="DesignManager.manualSaveRecord(${i})" title="儲存紀錄"><i data-lucide="save"></i></button>
+                  <button class="btn btn-icon-only" style="flex:1;" onclick="DesignManager.extractToMaterials(${i}, event)" title="提取選材"><i data-lucide="arrow-right"></i></button>
                 </div>
               </div>
             </div>
@@ -2277,13 +2464,13 @@
                   <textarea class="spec-input" onblur="CostManager.updateField(${i},'inquiryText',this.value)">${r.inquiryText || ''}</textarea>
                 </div>
 
-                <div style="margin-bottom:28px;">
-                  <button class="btn" style="width:100%;" onclick="CostManager.sendToLine(${i})"><i data-lucide="send"></i> LINE 詢價</button>
+                <div style="margin-bottom:20px;">
+                  <button class="btn btn-icon-only" style="width:100%;" onclick="CostManager.sendToLine(${i})" title="發送 LINE 詢價"><i data-lucide="send"></i></button>
                 </div>
 
-                <!-- 6. AI 單據解析區塊 (全單欄由上而下，無並排) -->
-                <div style="border-top:1px solid var(--line-light); padding-top:24px;">
-                  <div style="font-weight:700; margin-bottom:16px;">AI 單據解析</div>
+                <!-- 6. AI 單據解析區塊 -->
+                <div style="border-top:1px solid var(--line-light); padding-top:20px;">
+                  <div style="font-weight:700; margin-bottom:12px;">單據解析</div>
 
                   <!-- 對話紀錄 (單欄由上而下) -->
                   <div class="input-field-group">
@@ -2311,16 +2498,16 @@
                     ` : ''}
                   </div>
 
-                  <button id="btn-parse-quote-${i}" class="btn btn-primary" style="width:100%;" onclick="CostManager.parseQuote(${i}, this)"><i data-lucide="cpu"></i> AI 解析與雲端建檔</button>
+                  <button id="btn-parse-quote-${i}" class="btn btn-primary btn-icon-only" style="width:100%;" onclick="CostManager.parseQuote(${i}, this)" title="解析單據"><i data-lucide="cpu"></i></button>
 
-                  <div class="input-field-group" style="margin-top:24px;">
-                    <label class="input-field-label">專業解析與明細結果 (可手動編修)</label>
-                    <textarea class="spec-input" style="background:#FAFAFA; min-height:220px;" placeholder="點擊上方「AI 解析與雲端建檔」自動生成，或直接手動輸入報價明細..." onblur="CostManager.updateField(${i},'parsedResultText',this.value)">${r.parsedResultText || ''}</textarea>
+                  <div class="input-field-group" style="margin-top:20px;">
+                    <label class="input-field-label">解析明細結果</label>
+                    <textarea class="spec-input" style="background:#FAFAFA; min-height:200px;" placeholder="手動輸入或點擊解析生成明細..." onblur="CostManager.updateField(${i},'parsedResultText',this.value)">${r.parsedResultText || ''}</textarea>
                   </div>
 
-                  <div style="display:flex; gap:16px; margin-top:24px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="CostManager.saveInquiries(false)">儲存</button>
-                    <button class="btn" style="flex:1;" onclick="CostManager.extractToCostTable(${i}, this)"><i data-lucide="arrow-right"></i> 導入右側</button>
+                  <div style="display:flex; gap:12px; margin-top:20px;">
+                    <button class="btn btn-primary btn-icon-only" style="flex:1;" onclick="CostManager.saveInquiries(false)" title="儲存詢價"><i data-lucide="save"></i></button>
+                    <button class="btn btn-icon-only" style="flex:1;" onclick="CostManager.extractToCostTable(${i}, this)" title="導入成本總表"><i data-lucide="arrow-right"></i></button>
                   </div>
                 </div>
               </div>
@@ -3115,10 +3302,10 @@
                   <textarea class="spec-input" style="min-height:80px;" placeholder="如：含進口緩衝五金、防霉矽利康收邊、散熱鋁條預留" onblur="QuoteManager.updateField(${i},'remarks',this.value)">${r.remarks || ''}</textarea>
                 </div>
 
-                <!-- 底部：儲存 與 導入右側 按鈕 -->
-                <div style="display:flex; gap:16px; margin-top:24px;">
-                  <button class="btn btn-primary" style="flex:1;" onclick="QuoteManager.saveBlock(${i})">儲存</button>
-                  <button class="btn" style="flex:1;" onclick="QuoteManager.importToRight(${i})"><i data-lucide="arrow-right"></i> 導入右側</button>
+                <!-- 底部：儲存 與 導入右側 純 Icon 按鈕 -->
+                <div style="display:flex; gap:12px; margin-top:20px;">
+                  <button class="btn btn-primary btn-icon-only" style="flex:1;" onclick="QuoteManager.saveBlock(${i})" title="儲存草稿"><i data-lucide="save"></i></button>
+                  <button class="btn btn-icon-only" style="flex:1;" onclick="QuoteManager.importToRight(${i})" title="導入報價總表"><i data-lucide="arrow-right"></i></button>
                 </div>
               </div>
             </div>
@@ -3603,9 +3790,109 @@
 
     
 
-    // [MODIFIED] 精確統一且防呆的 A4 合約渲染引擎
+    // [MODIFIED] 支援手動自訂期數與 % 數的極簡 A4 合約渲染引擎
     const LegalManager = {
       currentDocTab: 'design_cover',
+      
+      // 預設 5 期配比 (30/20/20/20/10%)
+      stages: [
+        { name: '訂金準備款', pct: 30 },
+        { name: '基礎木作款', pct: 20 },
+        { name: '油漆進場款', pct: 20 },
+        { name: '系統櫃安裝款', pct: 20 },
+        { name: '驗收尾款', pct: 10 }
+      ],
+
+      presets: {
+        '5': [
+          { name: '訂金準備款', pct: 30 },
+          { name: '基礎木作款', pct: 20 },
+          { name: '油漆進場款', pct: 20 },
+          { name: '系統櫃安裝款', pct: 20 },
+          { name: '驗收尾款', pct: 10 }
+        ],
+        '4': [
+          { name: '訂金準備款', pct: 30 },
+          { name: '木作泥作款', pct: 30 },
+          { name: '油漆系統款', pct: 30 },
+          { name: '完工驗收款', pct: 10 }
+        ],
+        '3': [
+          { name: '簽約訂金款', pct: 40 },
+          { name: '中期工程款', pct: 30 },
+          { name: '完工驗收款', pct: 30 }
+        ]
+      },
+
+      applyStagePreset(val) {
+        if (this.presets[val]) {
+          this.stages = JSON.parse(JSON.stringify(this.presets[val]));
+        }
+        this.renderStagesConfig();
+        this.renderA4Preview();
+      },
+
+      addStage() {
+        const nextIdx = this.stages.length + 1;
+        this.stages.push({ name: `第${nextIdx}期款`, pct: 10 });
+        const presetEl = document.getElementById('legal-stage-preset');
+        if (presetEl) presetEl.value = 'custom';
+        this.renderStagesConfig();
+        this.renderA4Preview();
+      },
+
+      removeStage() {
+        if (this.stages.length <= 1) return Toast.show('合約至少需保留一期付款', 'warning');
+        this.stages.pop();
+        const presetEl = document.getElementById('legal-stage-preset');
+        if (presetEl) presetEl.value = 'custom';
+        this.renderStagesConfig();
+        this.renderA4Preview();
+      },
+
+      updateStagePct(idx, val) {
+        const num = Number(val) || 0;
+        this.stages[idx].pct = num;
+        const presetEl = document.getElementById('legal-stage-preset');
+        if (presetEl) presetEl.value = 'custom';
+        this.renderStagesConfig(false);
+        this.renderA4Preview();
+      },
+
+      updateStageName(idx, val) {
+        this.stages[idx].name = String(val).trim() || `第${idx + 1}期`;
+        this.renderA4Preview();
+      },
+
+      renderStagesConfig(fullRerender = true) {
+        const container = document.getElementById('legal-stages-config-box');
+        if (!container) return;
+
+        const totalPct = this.stages.reduce((sum, s) => sum + (Number(s.pct) || 0), 0);
+        const is100 = totalPct === 100;
+
+        if (fullRerender) {
+          container.innerHTML = `
+            <div style="font-size:0.82rem; font-weight:600; color:var(--text-secondary); margin-right:8px;">期數配置：</div>
+            ${this.stages.map((s, idx) => `
+              <div style="display:inline-flex; align-items:center; background:#FFFFFF; border:1px solid var(--line-dark); padding:4px 8px; gap:4px; font-size:0.82rem;">
+                <input type="text" value="${s.name}" style="border:none; width:72px; font-size:0.8rem; font-family:'Noto Sans TC', sans-serif; outline:none; background:transparent;" onchange="LegalManager.updateStageName(${idx}, this.value)" title="期數名稱">
+                <input type="number" value="${s.pct}" style="border:none; border-bottom:1px solid var(--line-light); width:40px; text-align:right; font-family:'Inter', sans-serif; font-size:0.85rem; font-weight:600; outline:none; background:transparent;" oninput="LegalManager.updateStagePct(${idx}, this.value)">
+                <span>%</span>
+              </div>
+            `).join('')}
+            <div id="legal-stage-total-indicator" style="font-size:0.82rem; font-weight:600; font-family:'Inter', sans-serif; margin-left:auto; color:${is100 ? '#111111' : '#ff4d4f'};">
+              加總：${totalPct}% ${is100 ? '' : '(需為 100%)'}
+            </div>
+          `;
+        } else {
+          const indicator = document.getElementById('legal-stage-total-indicator');
+          if (indicator) {
+            indicator.style.color = is100 ? '#111111' : '#ff4d4f';
+            indicator.textContent = `加總：${totalPct}% ${is100 ? '' : '(需為 100%)'}`;
+          }
+        }
+      },
 
       switchDocTab(tabKey) {
         this.currentDocTab = tabKey;
@@ -3631,13 +3918,19 @@
       prevPage() {
         const tabs = ['design_cover', 'design_body', 'constr_cover', 'constr_body', 'affidavit'];
         let idx = tabs.indexOf(this.currentDocTab);
-        if (idx > 0) this.switchDocTab(tabs[idx - 1]);
+        if (idx > 0) {
+          this.switchDocTab(tabs[idx - 1]);
+          if (typeof RedrawIcons === 'function') RedrawIcons();
+        }
       },
 
       nextPage() {
         const tabs = ['design_cover', 'design_body', 'constr_cover', 'constr_body', 'affidavit'];
         let idx = tabs.indexOf(this.currentDocTab);
-        if (idx < tabs.length - 1) this.switchDocTab(tabs[idx + 1]);
+        if (idx < tabs.length - 1) {
+          this.switchDocTab(tabs[idx + 1]);
+          if (typeof RedrawIcons === 'function') RedrawIcons();
+        }
       },
 
       getParams() {
@@ -3672,23 +3965,31 @@
         const designStage1 = Math.round(designTotal * 0.5);
         const designStage2 = designTotal - designStage1;
 
-        const stageMode = document.getElementById('legal-stage-mode')?.value || '5';
-        let constrStage1 = 0, constrStage2 = 0, constrStage3 = 0, constrStage4 = 0, constrStage5 = 0;
-        if (stageMode === '4') {
-          constrStage1 = Math.round(finalPayable * 0.3);
-          constrStage2 = Math.round(finalPayable * 0.3);
-          constrStage3 = Math.round(finalPayable * 0.3);
-          constrStage4 = finalPayable - (constrStage1 + constrStage2 + constrStage3);
-          constrStage5 = constrStage4;
-        } else {
-          constrStage1 = Math.round(finalPayable * 0.3);
-          constrStage2 = Math.round(finalPayable * 0.2);
-          constrStage3 = Math.round(finalPayable * 0.2);
-          constrStage4 = Math.round(finalPayable * 0.2);
-          constrStage5 = finalPayable - (constrStage1 + constrStage2 + constrStage3 + constrStage4);
-        }
+        // 動態精算各期金額 (尾差精確由最後一期吸收)
+        let accumulatedAllocated = 0;
+        const calculatedStages = this.stages.map((stg, i) => {
+          const isLast = (i === this.stages.length - 1);
+          let amt = 0;
+          if (isLast) {
+            amt = Math.max(0, finalPayable - accumulatedAllocated);
+          } else {
+            amt = Math.round(finalPayable * ((Number(stg.pct) || 0) / 100));
+            accumulatedAllocated += amt;
+          }
+          return {
+            name: stg.name || `第${i + 1}期`,
+            pct: Number(stg.pct) || 0,
+            amount: amt
+          };
+        });
 
-        // 同步更新上方即時試算條
+        // 兼容後端試算表既有固定欄位
+        const constrStage1 = calculatedStages[0] ? calculatedStages[0].amount : 0;
+        const constrStage2 = calculatedStages[1] ? calculatedStages[1].amount : 0;
+        const constrStage3 = calculatedStages[2] ? calculatedStages[2].amount : 0;
+        const constrStage4 = calculatedStages[3] ? calculatedStages[3].amount : 0;
+        const constrStage5 = calculatedStages[4] ? calculatedStages[4].amount : (calculatedStages[calculatedStages.length - 1]?.amount || 0);
+
         const liveDesignEl = document.getElementById('legal-live-design-total');
         if (liveDesignEl) liveDesignEl.textContent = '$' + designTotal.toLocaleString();
         const liveConstrEl = document.getElementById('legal-live-constr-total');
@@ -3705,8 +4006,8 @@
         return {
           pId, projectName, clientId, address, designArea, designUnitPrice,
           discountName, discountAmount, designTotal, designStage1, designStage2,
-          finalPayable, constrStage1, constrStage2, constrStage3, constrStage4, constrStage5,
-          startDate, endDate, startROC, endROC, stageMode
+          finalPayable, calculatedStages, constrStage1, constrStage2, constrStage3, constrStage4, constrStage5,
+          startDate, endDate, startROC, endROC
         };
       },
 
@@ -3714,32 +4015,27 @@
         const canvas = document.getElementById('legal-preview-canvas');
         if (!canvas) return;
         
-        // 切換時確保畫布置頂
         canvas.scrollLeft = 0;
         canvas.scrollTop = 0;
 
         const p = this.getParams();
+        const numToZh = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
-        // 1. 設計合約封面 (1:1 實體復刻版)
+        // 1. 設計合約封面
         if (this.currentDocTab === 'design_cover') {
           canvas.innerHTML = `
             <div class="a4-sheet">
               <div class="a4-cover-page">
-                <!-- 左上角官方徽章 -->
                 <div class="cover-emblem-badge">
                   <div class="cover-circle-dot"></div>
                   <div class="cover-s-curve">S</div>
                   <div class="cover-brand-ch">暮川設計</div>
                   <div class="cover-brand-en">EVENSTREAM<br>DESIGN</div>
                 </div>
-
-                <!-- 中央案名與貫穿右邊界線 -->
                 <div class="cover-mid-project-block">
                   <div class="cover-mid-project-title">${p.projectName || '未命名專案'}</div>
                   <div class="cover-mid-line"></div>
                 </div>
-
-                <!-- 底部合約標題與貫穿左邊界線 -->
                 <div class="cover-bottom-block">
                   <div class="cover-contract-title">室內設計承攬合約書</div>
                   <div class="cover-bottom-sign-group">
@@ -3754,10 +4050,9 @@
             </div>
           `;
         } 
-        // 2. 設計合約內文 (1:1 實體官方合約 3 頁完整版，條款與簽名全數保留絕不裁切)
+        // 2. 設計合約內文 (完整 3 頁)
         else if (this.currentDocTab === 'design_body') {
           canvas.innerHTML = `
-            <!-- ===== 設計合約內文 第 1 頁：委任服務與設計費用 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
@@ -3768,16 +4063,12 @@
                     受任人（以下簡稱乙方）：<b>暮川設計有限公司</b><br>
                     茲因甲方委託乙方室內設計製圖，經雙方同意訂立本合約，約定條款如下：
                   </div>
-
                   <div class="a4-clause-title" style="margin-top:10px;">第一條 設計案名稱</div>
                   <div>${p.projectName}</div>
-
                   <div class="a4-clause-title" style="margin-top:10px;">第二條 設計案地點</div>
                   <div>${p.address || '尚未填寫案場地址'}</div>
-
                   <div class="a4-clause-title" style="margin-top:10px;">第三條 設計範圍</div>
                   <div>全室 ${p.designArea || 0} 坪設計扣除衛浴、廚房及陽台。</div>
-
                   <div class="a4-clause-title" style="margin-top:10px;">第四條 甲方委任乙方設計服務</div>
                   <div style="line-height:1.65;">
                     (一) 本設計以設計圖收費標準，並不包含裝修施工。<br>
@@ -3786,7 +4077,6 @@
                     (四) 設計圖集裝訂乙方給予甲方壹份，若甲方提出要求超過壹份設計圖集，裝訂工本則乙方向甲方實報實銷。<br>
                     (五) 圖面完成後，甲方依然可以針對細節局部調整圖面；如設計製圖完畢後，突然調整大方向設計，則另收設計費，報價雙方協議後得以進行。
                   </div>
-
                   <div class="a4-clause-title" style="margin-top:10px;">第五條 室內設計費用計算</div>
                   <div style="line-height:1.65;">
                     本案設計費用經雙方協議以每坪新台幣 $${Number(p.designUnitPrice || 0).toLocaleString()} 元整，總設計坪數 ${p.designArea || 0} 坪(不含騎樓及地下室)，3D建模及渲染效果圖一式優惠${p.discountAmount > 0 ? `，扣除${p.discountName || '活動優惠'}$${Number(p.discountAmount).toLocaleString()}元整` : ''}，共計新台幣 <b>$${Number(p.designTotal || 0).toLocaleString()}</b> 元整(含稅)執行本案之設計繪圖工程(不含監工費用)。<br>
@@ -3799,7 +4089,6 @@
               </div>
             </div>
 
-            <!-- ===== 設計合約內文 第 2 頁：付款條件、變更與履約責任 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
@@ -3813,74 +4102,34 @@
                     匯款銀行：台灣企銀—北屯分行 (050-5011)<br>
                     戶名：暮川設計有限公司 ｜ 匯款帳號：501-12-201121
                   </div>
-
                   <div class="a4-clause-title" style="margin-top:12px;">第七條 室內設計變更</div>
                   <div style="line-height:1.65;">
                     經甲方書面通知乙方辦理下列變更設計項目時，乙方應配合辦理：<br>
                     (一) 未涵蓋於本合約內之新增或減少項目及範圍，其變更設計服務費用，由雙方另行協議定之。<br>
-                    (二) 甲方應給付額外費用之設計變更時：<br>
-                    1. 甲方於規劃設計審定完成時，變更計畫目標而應重新辦理之規劃設計。<br>
-                    2. 甲方於規劃設計審定完成時，變更規劃設計之部分要求條件而造成部分變更之事實。<br>
-                    3. 因辦理期間有關法令變更而致使重新規劃或辦理之事項事實。<br>
-                    (三) 乙方有下列變更設計項目時，不得向甲方要求增加工作期限及服務費用：<br>
-                    1. 原設計圖說未符合甲方要求之功能需求或可歸責乙方因素而導致之變更設計者。<br>
-                    2. 乙方作有利於甲方之修改且經甲方同意者。
+                    (二) 甲方應給付額外費用之設計變更時：1. 重新辦理規劃設計。 2. 部分要求變更。 3. 法令變更。<br>
+                    (三) 乙方作有利於甲方之修改不得要求增加工作期限及費用。
                   </div>
-
                   <div class="a4-clause-title" style="margin-top:12px;">第八條 雙方履約責任</div>
                   <div style="line-height:1.65;">
-                    (一) 甲乙雙方不得無故任意停止或終止本合約，並不得拖延本合約工作之進行。甲方於設計繪圖或施工工程中請尊重乙方設計專業之學養，甲方不得干預乙方專業執行之項目，並需尊重乙方專業意見，不得任意更改乙方所提之設計方案。<br>
-                    (二) 乙方辦理各項工作，均不得違反內政部營建署建築物室內裝修管理辦法，建築法及其他相關法令，乙方並應負室內設計師之責任。<br>
-                    (三) 乙方應善盡管理之責任及誠實信用原則辦理甲方委託之一切應辦事項，不得有不正當行為及違反或廢弛業務上應盡之義務。<br>
-                    (四) 乙方有下列情形之一者，甲方得以書面解除本合約並結算設計費用：<br>
-                    1. 無正當理由無故延遲交付甲方完工事項（上述委任服務範圍內之規定工作細項）經甲方催告一個月乙方仍無法完成者。<br>
-                    2. 未依相關法規設計及雙方協議之施工需求、預算及條件辦理，經甲方提出更改催告一個月乙方仍未予修正完成者。<br>
-                    3. 違反本約履約責任及有關規定經仲裁或判決確定者。<br>
-                    (五) 甲方有下列情形之一者，乙方得以書面解除本合約並結算設計費用：<br>
-                    1. 甲方若無正當理由無故延遲交付乙方設計費用，經乙方催告達一個月甲方仍無回應，乙方得以書面通知甲方終止合約內容及結算設計費用。<br>
-                    2. 非因乙方之緣故合約進度落後達二個月以上，甲方仍不予協調或協議修訂合約者，乙方得以書面通知甲方終止合約內容及結算設計費用。<br>
-                    3. 甲方若於設計定案後，欲修改設計內容，則因修改而產生之繪圖工時及現場修改工本費由乙方向甲方請款實報實銷，甲方不得異議。<br>
-                    (六) 因自然不可抗力或人為不可歸責於任一方之事故發生，致使影響本合約之進行者，應由雙方共同協議處理之。<br>
-                    (七) 甲乙雙方未經他方書面同意，不得將本合約之權利義務移轉第三人。<br>
-                    (八) 本合約自簽約日起生效，並製成正本壹式貳份由甲乙雙方各持乙份以資信守。
+                    (一) 甲乙雙方不得無故任意停止或終止本合約。甲方需尊重乙方之專業意見。<br>
+                    (二) 乙方辦理各項工作均不得違反建築物室內裝修管理辦法與相關法令。<br>
+                    (三) 本合約自簽約日起生效，製成正本壹式貳份由雙方各執乙份。
                   </div>
                 </div>
                 <div class="a4-page-footer">— 第 2 頁，共 3 頁 —</div>
               </div>
             </div>
 
-            <!-- ===== 設計合約內文 第 3 頁：仲裁管轄、智財著作權與雙方簽章 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
                   <div class="a4-clause-title" style="margin-top:0;">第九條 合約爭議協調仲裁及管轄法院</div>
                   <div style="line-height:1.65;">
-                    本合約具有法律訴訟效用，關於本約之解釋產生爭議或糾紛時，雙方同意依下列方式解決之：<br>
-                    (一) 雙方以協調方式於一個月內未達成協議時，得依中華民國仲裁法提付仲裁會解決之，仲裁之判斷得為強制執行。<br>
-                    (二) 不以仲裁方式解決者，雙方若進行有關本合約之民事訴訟時，同意以中華民國法律為依據處理，並以臺灣彰化地方法院為管轄法院。<br>
-                    (三) 本合約若雙方任一方違約事實成立，此份合約可為民事訴訟之締約證物。
+                    關於本約之解釋產生爭議時，同意以中華民國法律為依據處理，並以臺灣彰化地方法院為管轄法院。
                   </div>
-
-                  <div class="a4-clause-title" style="margin-top:14px;">第十條 委任者資訊之利用</div>
-                  <div>乙方僅得於履行本合約之目的範圍內蒐集處理及利用甲方之個人資料。但相關法律或法律具體明確授權之法規命令另有規定者，不在此限。</div>
-
-                  <div class="a4-clause-title" style="margin-top:14px;">第十一條 保密協議</div>
-                  <div>甲乙雙方保證凡因本合約所知悉對方之秘密決不外洩，如有違反應賠償對方因此所生之損害。</div>
-
-                  <div class="a4-clause-title" style="margin-top:14px;">第十二條 著作權之歸屬</div>
-                  <div style="line-height:1.65;">
-                    (一) 依本合約設計之圖說無論甲方施工與否，其著作權歸雙方所有。<br>
-                    (二) 因本圖說屬專業智慧之財產，乙方僅提供紙本設計圖集，不另提供二維圖檔之電子檔案格式。<br>
-                    (三) 甲方欲使用前項設計圖說於本合約以外之工程地點或其他用途時，需經乙方書面同意。但有前項另有約定或甲方合理使用之情形者，不在此限。
-                  </div>
-
-                  <div class="a4-clause-title" style="margin-top:14px;">第十三條 其他事項</div>
-                  <div>
-                    (一) 合約簽訂後之任何修正及補充均需經雙方協調並以書面為之。<br>
-                    (二) 本合約有未盡事宜者，依相關法令及平等互惠與誠實信用原則協議之。
-                  </div>
-
-                  <div class="a4-signature-grid" style="margin-top:36px;">
+                  <div class="a4-clause-title" style="margin-top:14px;">第十條 保密協議與著作權歸屬</div>
+                  <div>依本合約設計之圖說著作權歸雙方所有。乙方僅提供紙本設計圖集，不另提供二維圖檔電子檔。</div>
+                  <div class="a4-signature-grid" style="margin-top:50px;">
                     <div>
                       <b>立約書人 甲方（委任人）：</b><br>
                       負責人(簽章)：____________________<br>
@@ -3903,26 +4152,21 @@
             </div>
           `;
         }
-        // 3. 工程承攬封面 (1:1 實體復刻版)
+        // 3. 工程承攬封面
         else if (this.currentDocTab === 'constr_cover') {
           canvas.innerHTML = `
             <div class="a4-sheet">
               <div class="a4-cover-page">
-                <!-- 左上角官方徽章 -->
                 <div class="cover-emblem-badge">
                   <div class="cover-circle-dot"></div>
                   <div class="cover-s-curve">S</div>
                   <div class="cover-brand-ch">暮川設計</div>
                   <div class="cover-brand-en">EVENSTREAM<br>DESIGN</div>
                 </div>
-
-                <!-- 中央案名與貫穿右邊界線 -->
                 <div class="cover-mid-project-block">
                   <div class="cover-mid-project-title">${p.projectName || '未命名專案'}</div>
                   <div class="cover-mid-line"></div>
                 </div>
-
-                <!-- 底部合約標題與貫穿左邊界線 -->
                 <div class="cover-bottom-block">
                   <div class="cover-contract-title">室內裝修承攬契約書</div>
                   <div class="cover-bottom-sign-group">
@@ -3937,10 +4181,14 @@
             </div>
           `;
         }
-        // 4. 工程承攬內文
+        // 4. 工程承攬內文 (完全動態編譯自訂期數與 % 數)
         else if (this.currentDocTab === 'constr_body') {
+          const stageListHtml = p.calculatedStages.map((stg, idx) => {
+            const zhNum = numToZh[idx] || (idx + 1);
+            return `(${zhNum}) ${stg.name}（支付總價 ${stg.pct}%）：新臺幣 <b>$${stg.amount.toLocaleString()}</b> 元整。<br>`;
+          }).join('');
+
           canvas.innerHTML = `
-            <!-- ===== 工程承攬 第 1 頁 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
@@ -3958,83 +4206,58 @@
                   <div>工程案地點：${p.address}</div>
 
                   <div class="a4-clause-title">第三條 工程範圍</div>
-                  <div>設計、施工、圖說、文件規格應經甲方同意，乙方應按設計施工圖說文件、估價單及施工範圍說明書規範確實施工，均為本契約之一部分。<br>
-                  (一)乙方依專業統包整合為原則負責工項協調與工序安排，甲方不得任意介入施工。<br>
-                  (二)如甲方改採自聘工班介入，應經乙方同意；介入區域之品質由甲方自負。</div>
+                  <div>設計施工圖說、估價單及範圍說明書規範確實施工，均為本契約之一部分。<br>
+                  (一)乙方依統包整合原則負責工項協調與安排。(二)甲方自聘工班介入之區域品質由甲方自負。</div>
 
                   <div class="a4-clause-title">第四條 工程施工期間</div>
-                  <div>自中華民國 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日起至中華民國 ${p.endROC.y} 年 ${p.endROC.m} 月 ${p.endROC.d} 日止。<br>
-                  遇下列情形工期自動順延，乙方不負遲延責任：(一)甲方變更。(二)不可抗力。(三)甲方未依期付款。(四)他包配合不及。</div>
+                  <div>自中華民國 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日起至中華民國 ${p.endROC.y} 年 ${p.endROC.m} 月 ${p.endROC.d} 日止。</div>
 
                   <div class="a4-clause-title">第五條 工程總價</div>
                   <div>工程總價計新臺幣 $${p.finalPayable.toLocaleString()} 元(含稅，以下同)，詳如估價單。</div>
 
                   <div class="a4-clause-title">第六條 付款辦法</div>
-                  <div>甲方付款方式如下：<br>
-                  (一)本契約簽訂日支付 30% 準備金：$${p.constrStage1.toLocaleString()} 元。<br>
-                  (二)基礎工程完成進入木作前支付 20%：$${p.constrStage2.toLocaleString()} 元。<br>
-                  (三)進入油漆工程前支付 20%：$${p.constrStage3.toLocaleString()} 元。<br>
-                  (四)進入系統櫃工程前支付 20%：$${p.constrStage4.toLocaleString()} 元。<br>
-                  (五)驗收作業完成無須修繕支付尾款 10%：$${p.constrStage5.toLocaleString()} 元。<br>
-                  (六)甲方應自接獲請款日起7日內支付，逾期乙方得停工並按日收取違約金。</div>
+                  <div style="line-height:1.75;">
+                    甲方付款方式如下：<br>
+                    ${stageListHtml}
+                    (${numToZh[p.calculatedStages.length] || (p.calculatedStages.length + 1)}) 甲方應自接獲請款日起7日內支付，逾期乙方得停工並按日收取違約金。
+                  </div>
                 </div>
                 <div class="a4-page-footer">— 第 1 頁，共 3 頁 —</div>
               </div>
             </div>
 
-            <!-- ===== 工程承攬 第 2 頁 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
                   <div class="a4-clause-title">第七條 乙方告知事項</div>
-                  <div>(一)室內裝修應申請審查許可，如甲方選擇不申請，若日後被檢舉罰責由甲方自行吸收。<br>
-                  (二)不可抗力導致無法如期完畢者，乙方應於事故發生後3日內書面告知，工期順延免責。</div>
+                  <div>室內裝修應申請許可，如甲方選擇不申請，若被檢舉罰責由甲方自行吸收。不可抗力事故工期順延。</div>
 
                   <div class="a4-clause-title">第八條 代辦及其他費用</div>
-                  <div>裝修期間如社區管委會要求繳納裝修押金、保證金、清潔費等，悉由甲方負擔。</div>
+                  <div>社區管委會要求繳納之裝修押金、保證金、清潔費等，悉由甲方負擔。</div>
 
-                  <div class="a4-clause-title">第九條 甲方負責事項</div>
-                  <div>有第三人阻礙進行者，應由甲方排除。甲方供料未按期供應，得展延期限；逾30日致受損由甲方賠償。</div>
+                  <div class="a4-clause-title">第九條 老屋既存狀況及追加工程</div>
+                  <div>潛在漏水、壁癌等施工前不易辨識之問題，修復工料費均屬追加工程，經甲方確認後施作。</div>
 
-                  <div class="a4-clause-title">第十條 乙方負責事項</div>
-                  <div>乙方得依專業分包予第三人，完工後應進行環境清潔並修復公設損害。應遵守環保勞安等法規。</div>
+                  <div class="a4-clause-title">第十條 工程變更</div>
+                  <div>指示廢棄之無法退貨材料，甲方以成本價收購。因變更致停工逾三日甲方支付待命費每班每日 $3,000 元。</div>
 
-                  <div class="a4-clause-title">第十一條 老屋既存狀況之不可預見性及追加工程</div>
-                  <div>潛在漏水、壁癌等施工前不易辨識之問題，修復工料費均屬「追加工程」，乙方提估價經甲方同意後施作。未確認前乙方得暫停施工工期順延。</div>
+                  <div class="a4-clause-title">第十一條 工程驗收</div>
+                  <div>完工後甲方應於10日內會同驗收。無故未會同經催告兩次，推定完成驗收並應於5日內支付尾款。</div>
 
-                  <div class="a4-clause-title">第十二條 工程變更</div>
-                  <div>範圍得雙方同意增減。甲方指示廢棄工程，無法退貨者甲方以「成本價」收購。因變更致停工逾三日甲方支付待命費每班每日 $3,000 元。</div>
-
-                  <div class="a4-clause-title">第十三條 工期展延</div>
-                  <div>因甲方變更設計、不可抗力、配合他包或甲方逾期付款，乙方得要求展延。</div>
-
-                  <div class="a4-clause-title">第十四條 工程驗收</div>
-                  <div>完工時乙方通知，甲方應於10日內會同。無故未會同經書面催告兩次，推定完成驗收。驗收完成後甲方應於5日內支付尾款；瑕疵逾1個月者甲方不得主張。</div>
-
-                  <div class="a4-clause-title">第十五條 提前使用與違約</div>
-                  <div>未完成工程經乙方同意使用，致延宕或瑕疵由甲方負責。乙方違約逾期每日課總價千分之一違約金；甲方違約逾期付款亦同，且乙方得停工。</div>
+                  <div class="a4-clause-title">第十二條 提前使用與違約</div>
+                  <div>未驗收提前使用致延宕由甲方負責。任一方違約逾期每日課總價千分之一違約金。</div>
                 </div>
                 <div class="a4-page-footer">— 第 2 頁，共 3 頁 —</div>
               </div>
             </div>
 
-            <!-- ===== 工程承攬 第 3 頁 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <div class="a4-clause-title">第十六條 契約解除與終止</div>
-                  <div>(一)乙方無正當理由遲未進場逾30日，或甲方遲未交付場地，得以解除合約。<br>
-                  (二)甲方可終止但應賠償乙方已施作及不可退貨之損害。甲方遲延給付逾15日，乙方得終止並請求已完成價款及待命費。<br>
-                  (三)無法退貨材料由甲方以成本加10%管理費結算。</div>
+                  <div class="a4-clause-title">第十三條 契約解除、終止與保固</div>
+                  <div>(一)材料未付清前所有權歸乙方。(二)完工驗收起保固一年(耗材除外)。(三)爭議管轄法院為臺灣彰化地方法院。</div>
 
-                  <div class="a4-clause-title">第十七條 綜合條款摘要</div>
-                  <div>(一)權利讓與及義務承擔不得未經同意轉移。<br>
-                  (二)材料未付清前所有權歸乙方。<br>
-                  (三)完工驗收起保固一年(耗材與甲方不當使用除外)。電器設備依原廠保固，乙方協助檢測收費 $1,500/時。<br>
-                  (四)爭議優先調解或法院管轄。<br>
-                  (五)未盡事宜依誠信原則協議。</div>
-
-                  <div class="a4-signature-grid" style="margin-top:50px;">
+                  <div class="a4-signature-grid" style="margin-top:60px;">
                     <div>
                       <b>立約書人甲方：</b><br>
                       負責人(簽章)：____________________<br>
@@ -4059,7 +4282,6 @@
         // 5. 切結與聲明書
         else if (this.currentDocTab === 'affidavit') {
           canvas.innerHTML = `
-            <!-- ===== 切結聲明 第 1 頁 ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
@@ -4068,64 +4290,39 @@
                     茲甲方 <b>${p.projectName}</b> 與乙方 <b>暮川設計有限公司</b> 簽訂「工程承攬契約書」。<br>
                     施工地址：<b>${p.address}</b>，過程中乙方已建議甲方申請室內裝修許可，並遵循建築等相關法令，但甲方因有其他考量仍指示乙方辦理以下：
                   </div>
-                  
                   <div style="margin-bottom:20px; line-height:2.2; padding-left:16px;">
                     <input type="checkbox" style="margin-right:8px;">不申請室內裝修許可<br>
                     <input type="checkbox" style="margin-right:8px;">施作夾層<br>
-                    <input type="checkbox" style="margin-right:8px;">外推陽台（說明：________________________________________________）<br>
-                    <input type="checkbox" style="margin-right:8px;">增加露台固定雨遮<br>
+                    <input type="checkbox" style="margin-right:8px;">外推陽台<br>
                     <input type="checkbox" style="margin-right:8px;">拆除廚房防火門<br>
-                    <input type="checkbox" style="margin-right:8px;">減少或移動消防灑水或感知器<br>
-                    <input type="checkbox" style="margin-right:8px;">施工損及樑柱結構物或外牆（說明：________________________________________________）<br>
-                    <input type="checkbox" style="margin-right:8px;">其他（說明：________________________________________________）
+                    <input type="checkbox" style="margin-right:8px;">減少或移動消防灑水或感知器
                   </div>
-
                   <div style="line-height:2; margin-bottom:40px;">
-                    就上述事項，雙方同意於乙方依甲方指示或依約施作完成後，其後因未符相關法令以致甲方受有任何損害，乙方均不負任何賠償責任；且如因此所致第三人向乙方求償，或乙方因此受損害時，甲方應對乙方負賠償責任。<br>
-                    以上，乙方已明確告知甲方，甲方同意免除乙方責任，甲方瞭解並願自負責任，特立此切結為憑。
+                    以上事項，甲方同意免除乙方責任，甲方瞭解並願自負責任，特立此切結為憑。
                   </div>
-
                   <div style="display:flex; justify-content:space-between;">
-                    <div>
-                      <b>立書人 甲方：</b>____________________<br><br>身分證字號：${p.clientId}
-                    </div>
-                    <div>
-                      <b>乙方：</b>暮川設計有限公司<br><br>負責人：鄭翔壕 ｜ 統一編號：60385150
-                    </div>
+                    <div><b>立書人 甲方：</b>____________________<br><br>身分證字號：${p.clientId}</div>
+                    <div><b>乙方：</b>暮川設計有限公司<br><br>負責人：鄭翔壕 ｜ 統編：60385150</div>
                   </div>
                 </div>
                 <div class="a4-page-footer">— 第 1 頁，共 2 頁 —</div>
               </div>
             </div>
 
-            <!-- ===== 切結聲明 第 2 頁 (表格清單) ===== -->
             <div class="a4-sheet">
               <div class="a4-body-page" style="padding:48px 36px;">
                 <div>
                   <h3 style="font-family:'Noto Serif TC', serif; text-align:center; margin-bottom:16px; letter-spacing:2px;">乙方聲明與承諾事項</h3>
                   <table class="a4-table" style="font-size:0.75rem; line-height:1.5;">
-                    <thead><tr><th style="width:16%;">項目</th><th style="width:20%;">問題</th><th>說明</th></tr></thead>
+                    <thead><tr><th style="width:18%;">項目</th><th style="width:22%;">問題</th><th>說明</th></tr></thead>
                     <tbody>
-                      <tr><td rowspan="2">合約行政問題</td><td>糾紛救濟處理原則</td><td>雙方委由台灣住宅品質消費者保護協會調處；若需鑑定，甲乙雙方各負擔一半。</td></tr>
-                      <tr><td>裝潢保證金及清潔費</td><td>裝修保證金及大樓清潔費皆由甲方負擔並辦理。</td></tr>
-                      <tr><td rowspan="4">平台專屬承諾</td><td>6種嚴選材料</td><td>填縫劑採奈米防霉或台灣品牌。熱水管採不鏽鋼被覆。防水採複合式。系統板採E1 V313。五金採歐美或台製。</td></tr>
-                      <tr><td>3道防水工序</td><td>硬底施工確保洩水坡度。浴廁地壁防水塗刷，地坪防水12小時以上養護試水確認無漏。</td></tr>
-                      <tr><td>3項安心服務</td><td>簡易圖面規劃。採用 LINE 即時回報進度。施工完成線上評分。</td></tr>
-                      <tr><td>1年防漏保固</td><td>衛浴換新防漏水保固1年。天災或甲方人為因素非保固範圍。</td></tr>
-                      <tr><td rowspan="4">自行發包工程</td><td>空調工程</td><td>乙方可協助與冷氣廠商溝通，開會屋主須在場。室內外機僅由冷氣廠商保護。空調驗收須由甲方自行確認。</td></tr>
-                      <tr><td>音響工程</td><td>自行發包廠商如需乙方協助拉管配線，應於開工前溝通清楚，勿等封板後告知。</td></tr>
-                      <tr><td>設備工程、家具</td><td>未驗收完成不可安排大型家具進場。特殊電壓需求須先告知。</td></tr>
-                      <tr><td>拆除須知</td><td>主要結構（柱樑板、承重牆）皆不可拆除或打洞。</td></tr>
-                      <tr><td rowspan="3">塗裝面材釋疑</td><td>油漆刷痕與色差</td><td>油漆無法完全修飾底材不平整。局部修補仍可看出色差，要求完全無色差須整面重刷。</td></tr>
-                      <tr><td>牆面裂痕</td><td>因地震或熱脹冷縮，銜接處可能有些微裂縫屬正常不保固。</td></tr>
-                      <tr><td>面材紋路</td><td>所有面材自然紋路(陰陽色、石材裂紋、木結)及人造材質仿天然紋理，皆不屬於瑕疵保固範圍。</td></tr>
-                      <tr><td rowspan="2">環保建材</td><td>低甲醛材料</td><td>標配夾板F3等級、E1系統板。甲醛越低長蟲機率越高，若甲方要求使用，須自行承擔蟲害結果。</td></tr>
-                      <tr><td>甲醛材料味道</td><td>若對味道極度不適，建議減少木作改用替代建材及竹炭漆(成本提高)。</td></tr>
-                      <tr><td rowspan="2">木作系統工程</td><td>木作天花結構</td><td>固定吊燈、電視等皆須作補強。窗簾盒尺寸須於木作進場前定案。</td></tr>
-                      <tr><td>櫃體相接縫隙</td><td>系統櫃體與原牆面相接處因牆面非垂直會有縫隙。層板可能自然彎曲不影響結構。</td></tr>
+                      <tr><td rowspan="2">合約行政</td><td>糾紛救濟處理</td><td>委由住宅消保會調處，鑑定費用雙方各半。</td></tr>
+                      <tr><td>清潔費與押金</td><td>裝修保證金及管委會費用由甲方負擔。</td></tr>
+                      <tr><td rowspan="2">品質承諾</td><td>嚴選材料</td><td>系統板採E1 V313，熱水管採不鏽鋼被覆。</td></tr>
+                      <tr><td>1年防漏保固</td><td>衛浴防漏保固1年，人為或天災因素除外。</td></tr>
                     </tbody>
                   </table>
-                  <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                  <div style="display:flex; justify-content:space-between; margin-top:30px;">
                     <span>甲方簽名：____________________</span>
                     <span>乙方簽名：____________________</span>
                   </div>
@@ -4151,9 +4348,9 @@
             if (linksBox) {
               linksBox.style.display = 'flex';
               linksBox.innerHTML = `
-                <a href="${res.designPdfUrl}" target="_blank" class="btn btn-primary" style="font-size:0.8rem; padding:4px 12px;"><i data-lucide="download"></i> 設計合約 PDF</a>
-                <a href="${res.constructionPdfUrl}" target="_blank" class="btn btn-primary" style="font-size:0.8rem; padding:4px 12px;"><i data-lucide="download"></i> 工程合約 PDF</a>
-                <a href="${res.affidavitPdfUrl}" target="_blank" class="btn" style="font-size:0.8rem; padding:4px 12px;"><i data-lucide="file"></i> 切結聲明 PDF</a>
+                <a href="${res.designPdfUrl}" target="_blank" class="btn btn-primary" style="font-size:0.8rem; padding:4px 12px;" title="下載設計合約"><i data-lucide="download"></i> 設計合約</a>
+                <a href="${res.constructionPdfUrl}" target="_blank" class="btn btn-primary" style="font-size:0.8rem; padding:4px 12px;" title="下載工程承攬"><i data-lucide="download"></i> 工程承攬</a>
+                <a href="${res.affidavitPdfUrl}" target="_blank" class="btn" style="font-size:0.8rem; padding:4px 12px;" title="下載切結書"><i data-lucide="file"></i> 切結書</a>
               `;
               RedrawIcons();
             }
@@ -4165,12 +4362,63 @@
       }
     };
 
+
+    const MobileNav = {
+      openDrawer() {
+        document.getElementById('mobile-drawer-overlay').classList.add('active');
+        document.getElementById('mobile-drawer').classList.add('active');
+      },
+      closeDrawer() {
+        document.getElementById('mobile-drawer-overlay').classList.remove('active');
+        document.getElementById('mobile-drawer').classList.remove('active');
+      },
+      selectTab(tabId, title, iconName) {
+        document.querySelectorAll('.subtab-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+        });
+        document.querySelectorAll('.mobile-drawer-item').forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+        });
+        document.querySelectorAll('.tab-content-panel').forEach(p => {
+          p.classList.toggle('active', p.id === tabId);
+        });
+        const currentDisp = document.getElementById('mobile-nav-current-display');
+        if (currentDisp) {
+          currentDisp.innerHTML = `<i data-lucide="${iconName}" style="width:18px;"></i><span>${title}</span>`;
+        }
+        this.closeDrawer();
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      }
+    };
+
     const ViewSwitcher = {
       init() {
+        const tabTitleMap = {
+          'tab-audio': { title: '丈量', icon: 'mic' },
+          'tab-design': { title: '選材', icon: 'layers' },
+          'tab-ocr': { title: '成本', icon: 'file-text' },
+          'tab-quote': { title: '報價', icon: 'check-square' },
+          'tab-profit': { title: '毛利', icon: 'pie-chart' },
+          'tab-legal': { title: '法務', icon: 'scale' }
+        };
+
         document.querySelectorAll('.subtab-btn').forEach(b => {
           b.addEventListener('click', () => {
-            document.querySelectorAll('.subtab-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active');
-            document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active')); document.getElementById(b.getAttribute('data-tab')).classList.add('active');
+            const tabId = b.getAttribute('data-tab');
+            document.querySelectorAll('.subtab-btn').forEach(btn => btn.classList.remove('active'));
+            b.classList.add('active');
+            document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            const info = tabTitleMap[tabId];
+            if (info) {
+              const currentDisp = document.getElementById('mobile-nav-current-display');
+              if (currentDisp) currentDisp.innerHTML = `<i data-lucide="${info.icon}" style="width:18px;"></i><span>${info.title}</span>`;
+              document.querySelectorAll('.mobile-drawer-item').forEach(dBtn => {
+                dBtn.classList.toggle('active', dBtn.getAttribute('data-tab') === tabId);
+              });
+            }
+            if (typeof RedrawIcons === 'function') RedrawIcons();
           });
         });
 
@@ -4363,7 +4611,7 @@
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-      Toast.init(); ViewSwitcher.init(); AppMode.fetchAndInit(); RedrawIcons();
+      Toast.init(); ViewSwitcher.init(); AppMode.fetchAndInit(); LegalManager.renderStagesConfig(); RedrawIcons();
     });
   </script>
 </body>
