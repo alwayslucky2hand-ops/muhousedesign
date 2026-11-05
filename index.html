@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>多模態設計訪談與急速報價中心 - 暮川設計</title>
+  <title>室內設計裝修報價系統 - 暮川設計</title>
   
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -810,7 +810,7 @@
       </div>
     </div>
     <div class="hero-title-area">
-      <h1 class="hero-title brand-serif">多模態設計與報價中心</h1>
+      <h1 class="hero-title brand-serif">室內設計裝修報價系統</h1>
       <div class="hero-subtitle brand-serif">室內設計承攬系統</div>
     </div>
   </header>
@@ -842,6 +842,7 @@
         <button class="subtab-btn" data-tab="tab-quote"><i data-lucide="check-square"></i> 報價</button>
         <button class="subtab-btn" data-tab="tab-profit"><i data-lucide="pie-chart"></i> 毛利</button>
         <button class="subtab-btn" data-tab="tab-legal"><i data-lucide="scale"></i> 法務</button>
+        <button class="subtab-btn" data-tab="tab-qa"><i data-lucide="bot"></i> 客服</button>
       </nav>
 
       
@@ -871,6 +872,7 @@
           <button class="mobile-drawer-item" data-tab="tab-quote" onclick="MobileNav.selectTab('tab-quote', '報價', 'check-square')"><i data-lucide="check-square"></i> 報價</button>
           <button class="mobile-drawer-item" data-tab="tab-profit" onclick="MobileNav.selectTab('tab-profit', '毛利', 'pie-chart')"><i data-lucide="pie-chart"></i> 毛利</button>
           <button class="mobile-drawer-item" data-tab="tab-legal" onclick="MobileNav.selectTab('tab-legal', '法務', 'scale')"><i data-lucide="scale"></i> 法務</button>
+          <button class="mobile-drawer-item" data-tab="tab-qa" onclick="MobileNav.selectTab('tab-qa', '客服', 'bot')"><i data-lucide="bot"></i> 客服</button>
         </div>
       </div>
 
@@ -1287,6 +1289,24 @@
         </div>
       </div>
 
+      
+      <div id="tab-qa" class="tab-content-panel">
+        <div class="quote-item-card table-card" style="border:none; padding:0; overflow:hidden;">
+          <div class="item-card-header" style="padding: 16px 28px; border-bottom: 1px solid var(--line-light); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h3>暮川智能客服系統</h3>
+              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:3px;">AI 智能對話與工班客戶即時推播控制中心</div>
+            </div>
+            <a href="https://alwayslucky2hand-ops.github.io/muhouseqa/" target="_blank" rel="noopener noreferrer" class="pill btn-icon-only" style="text-decoration:none; height:34px; border-color:var(--line-dark);" title="於獨立新視窗開啟">
+              <i data-lucide="external-link" style="width:16px;"></i>
+            </a>
+          </div>
+          <div style="width:100%; height:82vh; min-height:680px; background:#FFFFFF;">
+            <iframe src="https://alwayslucky2hand-ops.github.io/muhouseqa/" style="width:100%; height:100%; border:none;" allow="clipboard-read; clipboard-write; microphone; camera"></iframe>
+          </div>
+        </div>
+      </div>
+
     </section>
   </main>
 
@@ -1362,6 +1382,7 @@
     const StateStore = {
       state: { 
         activeProject: '', clientName: '', audioQueue: [], contractorOcrItems: [], contractorInquiries: [],
+        vendorBindings: [],
         interviewRecords: [], activeRecordIdx: 0, 
         quotationDraftItems: [], quotationTableItems: [], financialControls: { discountAmount: 0, managementFeeRate: 8 }, 
         calculatedSummary: { totalCost: 0, quoteTotal: 0, taxAmount: 0, grossProfit: 0, grossMarginRate: 0, finalPayable: 0 }, 
@@ -2156,10 +2177,44 @@
           Toast.show('智能發包失敗: ' + err.message, 'error');
         }
       },
-      sendToLine(idx) {
-        const text = StateStore.state.contractorInquiries[idx].inquiryText;
-        if(!text) return Toast.show('請先填寫內容', 'error');
-        window.open('https://line.me/R/msg/text/?' + encodeURIComponent(text), '_blank');
+      applyVendorBinding(idx, vendorName) {
+        const bindings = StateStore.state.vendorBindings || [];
+        const match = bindings.find(b => b.name === vendorName);
+        if (!match) return;
+        const record = StateStore.state.contractorInquiries[idx];
+        record.contractor = match.name;
+        record.lineId = match.lineId || '';
+        if (match.category && (!record.category || record.category === '未分類' || record.category === '木作工程')) {
+          record.category = match.category;
+        }
+        this.saveInquiries(true);
+        this.renderInquiries();
+        Toast.show(`已帶入廠商「${match.name}」與 LINE ID！`);
+      },
+
+      async sendToLine(idx) {
+        const record = StateStore.state.contractorInquiries[idx];
+        const text = record.inquiryText;
+        if (!text) return Toast.show('請先填寫詢價內容', 'error');
+
+        const pId = StateStore.get('activeProject');
+        const vName = record.contractor || '未指定廠商';
+        const lId = record.lineId || '';
+
+        Toast.show(`正在發送訊息給廠商 (${vName})...`, 'info');
+        try {
+          await ApiQueue.sendRequest('logVendorInteraction', {
+            projectId: pId,
+            vendorName: vName,
+            lineId: lId,
+            category: record.category || '工程發包',
+            messageText: text
+          });
+          Toast.show('已發送訊息至廠商 LINE！');
+        } catch (err) {
+          console.error('發送失敗: ', err);
+          Toast.show('發送訊息失敗: ' + err.message, 'error');
+        }
       },
       async parseQuote(idx, btn) {
         const pId = StateStore.get('activeProject');
@@ -2426,10 +2481,21 @@
                   <input type="text" class="spec-input" value="${r.category || ''}" placeholder="請輸入工程分類 (例如：保護工程、木作工程)" onblur="CostManager.updateField(${i},'category',this.value); CostManager.renderInquiries();">
                 </div>
 
-                <!-- 2. 廠商 (單欄由上而下) -->
+                <!-- 2. 廠商（可點選已綁定廠商快速帶入 ID 與工種） -->
                 <div class="input-field-group">
-                  <label class="input-field-label">廠商</label>
-                  <input type="text" class="spec-input" value="${r.contractor || ''}" placeholder="請輸入廠商名稱" onblur="CostManager.updateField(${i},'contractor',this.value); CostManager.renderInquiries();">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label class="input-field-label">廠商名稱</label>
+                    ${(StateStore.state.vendorBindings && StateStore.state.vendorBindings.length > 0) ? `
+                      <select class="spec-input" style="width:auto; min-height:28px; padding:2px 8px; font-size:0.78rem;" onchange="CostManager.applyVendorBinding(${i}, this.value)">
+                        <option value="">帶入綁定廠商...</option>
+                        ${StateStore.state.vendorBindings.map(b => `<option value="${b.name}" ${r.contractor === b.name ? 'selected' : ''}>${b.name} (${b.category || '未分類'})</option>`).join('')}
+                      </select>
+                    ` : ''}
+                  </div>
+                  <input type="text" class="spec-input" list="vendor-datalist-${i}" value="${r.contractor || ''}" placeholder="請輸入或選擇廠商名稱" onblur="CostManager.updateField(${i},'contractor',this.value); CostManager.renderInquiries();">
+                  <datalist id="vendor-datalist-${i}">
+                    ${(StateStore.state.vendorBindings || []).map(b => `<option value="${b.name}">${b.name} - ${b.category || ''} (${b.lineId || '無ID'})</option>`).join('')}
+                  </datalist>
                 </div>
 
                 <!-- 3. LINE ID (單欄由上而下) -->
@@ -4399,7 +4465,8 @@
           'tab-ocr': { title: '成本', icon: 'file-text' },
           'tab-quote': { title: '報價', icon: 'check-square' },
           'tab-profit': { title: '毛利', icon: 'pie-chart' },
-          'tab-legal': { title: '法務', icon: 'scale' }
+          'tab-legal': { title: '法務', icon: 'scale' },
+          'tab-qa': { title: '客服', icon: 'bot' }
         };
 
         document.querySelectorAll('.subtab-btn').forEach(b => {
@@ -4455,7 +4522,10 @@
             try {
               const res = await ApiQueue.sendRequest('getInitialData', { projectId: selectedProjectId });
               if (res) {
-                StateStore.state.activeProject = selectedProjectId; StateStore.state.contractorOcrItems = res.costs || []; StateStore.state.contractorInquiries = res.contractorInquiries || [];
+                StateStore.state.activeProject = selectedProjectId; 
+                StateStore.state.contractorOcrItems = res.costs || []; 
+                StateStore.state.contractorInquiries = res.contractorInquiries || [];
+                StateStore.state.vendorBindings = res.vendorBindings || [];
                 if (res.projects) {
                   const currentProjectData = res.projects.find(p => String(p.projectId) === String(selectedProjectId));
                   if (currentProjectData) {
