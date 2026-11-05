@@ -893,6 +893,16 @@
               </div>
               <div id="audio-timer" style="font-size:2rem; font-family:'Inter', sans-serif; font-weight:300; margin-top:12px;">00:00</div>
               <div id="audio-bg-hint" style="font-size:0.8rem; color:var(--text-secondary); margin-top:6px;">錄音每 30 秒自動備份，點擊處理圖標開始聽打。</div>
+              <button id="btn-fake-sleep" class="btn" style="margin-top:14px; font-size:0.82rem; border-color:var(--line-dark); display:none;" onclick="AudioManager.enterFakeSleep()">
+                🌙 進入防誤觸黑屏省電模式（放口袋專用）
+              </button>
+            </div>
+
+            
+            <div id="fake-sleep-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000000; z-index:99999; color:#444; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; -webkit-user-select:none;">
+              <div style="font-size:0.9rem; color:#555; margin-bottom:8px;">● 現場丈量持續收音中</div>
+              <div id="fake-sleep-timer" style="font-size:2.5rem; font-family:'Inter',sans-serif; color:#333; font-weight:300;">00:00</div>
+              <div style="font-size:0.75rem; color:#666; margin-top:30px; border:1px solid #333; padding:6px 14px; border-radius:20px;">長按螢幕 1.5 秒喚醒面板</div>
             </div>
             
             <div class="quote-item-card">
@@ -2720,6 +2730,7 @@
       audioCtx: null,
       keepAliveOsc: null,
       workerTimer: null,
+      wakeLockSentinel: null,
       recordStartTime: 0,
       secondsElapsed: 0,
       currentSliceStartSec: 0,
@@ -2727,6 +2738,43 @@
       isRecording: false,
       isUploadingSlice: false,
       isTranscribing: false,
+
+      async requestWakeLock() {
+        try {
+          if ('wakeLock' in navigator) {
+            this.wakeLockSentinel = await navigator.wakeLock.request('screen');
+          }
+        } catch(e) { console.warn('WakeLock 啟動略過', e); }
+      },
+
+      releaseWakeLock() {
+        if (this.wakeLockSentinel) {
+          try { this.wakeLockSentinel.release(); } catch(e){}
+          this.wakeLockSentinel = null;
+        }
+      },
+
+      enterFakeSleep() {
+        const overlay = document.getElementById('fake-sleep-overlay');
+        if (!overlay) return;
+        overlay.style.display = 'flex';
+        this.requestWakeLock();
+
+        let pressTimer = null;
+        const startPress = (e) => {
+          if (e && e.cancelable) e.preventDefault();
+          pressTimer = setTimeout(() => {
+            overlay.style.display = 'none';
+            Toast.show('已喚醒丈量面板');
+          }, 1500);
+        };
+        const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); };
+
+        overlay.onmousedown = startPress;
+        overlay.onmouseup = cancelPress;
+        overlay.ontouchstart = startPress;
+        overlay.ontouchend = cancelPress;
+      },
 
       switchMobileTab(side) {
         const bL = document.getElementById('btn-audio-mobile-left');
@@ -2822,6 +2870,8 @@
         const s = String(this.secondsElapsed % 60).padStart(2, '0');
         const timerEl = document.getElementById('audio-timer');
         if (timerEl) timerEl.textContent = `${m}:${s}`;
+        const fakeTimerEl = document.getElementById('fake-sleep-timer');
+        if (fakeTimerEl) fakeTimerEl.textContent = `${m}:${s}`;
 
         const statusEl = document.getElementById('audio-slice-status');
         if (statusEl) {
@@ -2955,6 +3005,9 @@
           document.getElementById('btn-record').disabled = true;
           document.getElementById('btn-stop').disabled = false;
           document.getElementById('audio-timer').textContent = '00:00';
+          const btnSleep = document.getElementById('btn-fake-sleep');
+          if (btnSleep) btnSleep.style.display = 'inline-block';
+          this.requestWakeLock();
 
           const statusEl = document.getElementById('audio-slice-status');
           if (statusEl) {
@@ -2989,6 +3042,11 @@
 
         document.getElementById('btn-record').disabled = false;
         document.getElementById('btn-stop').disabled = true;
+        const btnSleep = document.getElementById('btn-fake-sleep');
+        if (btnSleep) btnSleep.style.display = 'none';
+        const overlay = document.getElementById('fake-sleep-overlay');
+        if (overlay) overlay.style.display = 'none';
+        this.releaseWakeLock();
 
         const statusEl = document.getElementById('audio-slice-status');
         if (statusEl) statusEl.textContent = '錄音已結束。音檔已完成建檔，請點擊「AI 解析逐字稿」執行解析';
