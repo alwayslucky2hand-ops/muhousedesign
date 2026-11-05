@@ -483,13 +483,32 @@
       height: 100%;
       box-sizing: border-box;
     }
+    .a4-body-page {
+      padding: 46px 54px 64px 54px;
+      color: #111111 !important;
+      font-size: 13.5px;
+      line-height: 1.65;
+      font-family: 'Noto Sans TC', sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      height: 100%;
+      box-sizing: border-box;
+      position: relative;
+    }
     .a4-page-footer {
+      position: absolute;
+      bottom: 24px;
+      left: 54px;
+      right: 54px;
       text-align: center;
       font-size: 0.75rem;
       color: #888888;
-      margin-top: 24px;
-      padding-top: 12px;
+      padding-top: 10px;
       border-top: 1px solid #EEEEEE;
+      background: #FFFFFF;
+      box-sizing: border-box;
+      pointer-events: none;
     }
      
     .a4-cover-page {
@@ -4177,101 +4196,200 @@
         // 2. 設計合約內文 (完整 3 頁)
         else if (this.currentDocTab === 'design_body') {
           canvas.innerHTML = `
+            <!-- ================= 設計合約內文 第 1 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <h2 style="margin-bottom:16px; padding-bottom:8px;">室內設計承攬合約書</h2>
-                  <div style="margin-bottom:12px; line-height:1.7;">
-                    立合約書人<br>
-                    委任人（以下簡稱甲方）：<b>${p.projectName}</b><br>
-                    受任人（以下簡稱乙方）：<b>暮川設計有限公司</b><br>
-                    茲因甲方委託乙方室內設計製圖，經雙方同意訂立本合約，約定條款如下：
+                  <h2 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.55rem; letter-spacing:3px; margin-bottom:18px; padding-bottom:8px; border-bottom:1.5px solid #111;">室內設計承攬合約書</h2>
+                  
+                  <div style="font-size:0.92rem; line-height:1.9; margin-bottom:12px; text-align:justify;">
+                    立合約書人——— 委任人: <b>${p.projectName || '____________________'}</b> (以下簡稱甲方)<br>
+                    受任人: <b>暮川設計有限公司</b> (以下簡稱乙方)<br>
+                    茲因甲方委託乙方室內設計製圖，經雙方同意訂立本合約，約定條款如下:
                   </div>
-                  <div class="a4-clause-title" style="margin-top:10px;">第一條 設計案名稱</div>
-                  <div>${p.projectName}</div>
-                  <div class="a4-clause-title" style="margin-top:10px;">第二條 設計案地點</div>
-                  <div>${p.address || '尚未填寫案場地址'}</div>
-                  <div class="a4-clause-title" style="margin-top:10px;">第三條 設計範圍</div>
-                  <div>全室 ${p.designArea || 0} 坪設計扣除衛浴、廚房及陽台。</div>
-                  <div class="a4-clause-title" style="margin-top:10px;">第四條 甲方委任乙方設計服務</div>
-                  <div style="line-height:1.65;">
-                    (一) 本設計以設計圖收費標準，並不包含裝修施工。<br>
-                    (二) 本設計案進行當中，甲方若房屋進行交易買賣，或取消委託設計案，甲方已支付乙方之設計費將不予退費。<br>
-                    (三) 設計服務範圍包括本案圖面之平面圖、立面圖、剖面圖、3D圖、水電圖、材質圖等配置細項(依規劃圖面所列)，而服務事項著依乙方所提圖面作業細節經雙方協議之設計細項為執行依歸。<br>
-                    (四) 設計圖集裝訂乙方給予甲方壹份，若甲方提出要求超過壹份設計圖集，裝訂工本則乙方向甲方實報實銷。<br>
-                    (五) 圖面完成後，甲方依然可以針對細節局部調整圖面；如設計製圖完畢後，突然調整大方向設計，則另收設計費，報價雙方協議後得以進行。
+
+                  <div style="font-size:0.9rem; line-height:1.85; margin-bottom:14px; background:#FAFAFA; border:1px solid var(--line-light); padding:10px 14px;">
+                    <div><b>設計案名稱:</b> ${p.projectName || ''}</div>
+                    <div><b>設計案地點:</b> ${p.address || ''}</div>
+                    <div><b>設計範圍:</b> 全室 ${p.designArea || 0} 坪設計扣除衛浴、廚房及陽台</div>
                   </div>
-                  <div class="a4-clause-title" style="margin-top:10px;">第五條 室內設計費用計算</div>
-                  <div style="line-height:1.65;">
-                    本案設計費用經雙方協議以每坪新台幣 $${Number(p.designUnitPrice || 0).toLocaleString()} 元整，總設計坪數 ${p.designArea || 0} 坪(不含騎樓及地下室)，3D建模及渲染效果圖一式優惠${p.discountAmount > 0 ? `，扣除${p.discountName || '活動優惠'}$${Number(p.discountAmount).toLocaleString()}元整` : ''}，共計新台幣 <b>$${Number(p.designTotal || 0).toLocaleString()}</b> 元整(含稅)執行本案之設計繪圖工程(不含監工費用)。<br>
-                    設計繪圖工作期限自民國 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日起至民國 ${p.endROC.y} 年 ${p.endROC.m} 月 ${p.endROC.d} 日止。<br>
-                    繪圖工作完成時，甲方若委任乙方進行本工程施作，則雙方需另訂工程施工合約。<br>
-                    工程規劃期間，甲方若委任乙方進行內政部室內裝修許可證申報文件申請時，申請費用及設計師簽證費用由甲方負擔，本案設計費中不包含裝修圖審及竣工申請請照相關費用規費。
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">一、甲方委任乙方設計服務:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    1. 本設計以設計圖收費標準，並不包含裝修施工。<br>
+                    2. 本設計案進行當中，甲方若房屋進行交易買賣，或取消委託設計案，甲方已支付乙方之設計費將不予退費。<br>
+                    3. 設計服務範圍包括本案圖面之平面圖、立面圖、剖面圖、3D圖、水電圖、材質圖等配置細項(依規劃圖面所列)，而服務事項著依乙方所提圖面作業細節經雙方協議之設計細項為執行依歸。<br>
+                    4. 設計圖集裝訂乙方給予甲方壹份，若甲方提出要求超過壹份設計圖集，裝訂工本則乙方向甲方實報實銷。<br>
+                    5. 圖面完成後，甲方依然可以針對細節局部調整圖面!!!如設計製圖完畢後，突然調整大方向設計，則另收設計費，報價雙方協議後得以進行。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">二、室內設計費用計算:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    1. 本案設計費用經雙方協議以每坪新台幣 ${Number(p.designUnitPrice || 0).toLocaleString()} 元整，總設計坪數 ${p.designArea || 0} 坪(不含騎樓及地下室)，3D 建模及渲染效果圖一式優惠${p.discountAmount > 0 ? `，扣除${p.discountName || '活動優惠'}${Number(p.discountAmount).toLocaleString()}元整` : ''}，共計新台幣 <b>${Number(p.designTotal || 0).toLocaleString()}</b> 元整(含稅)執行本案之設計繪圖工程。(不含監工費用)。<br>
+                    2. 設計繪圖工作期限自 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日起至 ${p.endROC.y} 年 ${p.endROC.m} 月 ${p.endROC.d} 日止。<br>
+                    3. 繪圖工作完成時，甲方若委任乙方進行本工程施作，則雙方需另訂工程施工合約。
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 1 頁，共 3 頁 —</div>
+                <div class="a4-page-footer">— 第 1 頁，共 5 頁 —</div>
               </div>
             </div>
 
+            <!-- ================= 設計合約內文 第 2 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <div class="a4-clause-title" style="margin-top:0;">第六條 設計繪圖費用付款條件</div>
-                  <div style="line-height:1.65;">
-                    雙方同意設計費用給付辦法為開立即期支票或匯款：<br>
-                    (一) 第一期款：簽約金支付設計總價 50%，計新台幣 <b>$${Number(p.designStage1 || 0).toLocaleString()}</b> 元整。<br>
-                    (二) 第二期款：施工圖及 3D 圖完成，支付設計總價 50%，計新台幣 <b>$${Number(p.designStage2 || 0).toLocaleString()}</b> 元整。<br>
-                    設計合約簽訂三日內，甲方支付第一期款計新台幣 $${Number(p.designStage1 || 0).toLocaleString()} 元整，乙方開始進行繪圖服務。<br>
-                    <b>【匯款帳號】</b><br>
-                    匯款銀行：台灣企銀—北屯分行 (050-5011)<br>
-                    戶名：暮川設計有限公司 ｜ 匯款帳號：501-12-201121
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.3rem; letter-spacing:2px; margin-bottom:18px; border-bottom:1px solid #111; padding-bottom:6px;">室內設計合約書</h3>
+
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    4. 工程規劃期間，甲方若委任乙方進行內政部室內裝修許可證申報文件申請時，申請費用及設計師簽證費用由甲方負擔，本案設計費中不包含裝修圖審及竣工申請請照相關費用規費。
                   </div>
-                  <div class="a4-clause-title" style="margin-top:12px;">第七條 室內設計變更</div>
-                  <div style="line-height:1.65;">
-                    經甲方書面通知乙方辦理下列變更設計項目時，乙方應配合辦理：<br>
-                    (一) 未涵蓋於本合約內之新增或減少項目及範圍，其變更設計服務費用，由雙方另行協議定之。<br>
-                    (二) 甲方應給付額外費用之設計變更時：1. 重新辦理規劃設計。 2. 部分要求變更。 3. 法令變更。<br>
-                    (三) 乙方作有利於甲方之修改不得要求增加工作期限及費用。
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:16px; margin-bottom:6px;">三、設計繪圖費用付款條件:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    雙方同意設計費用給付辦法為開立即期支票或匯款。<br>
+                    第一期款: 簽約金支付設計總價 50%，計新台幣 <b>${Number(p.designStage1 || 0).toLocaleString()}</b> 元整。<br>
+                    第二期款: 施工圖及 3D 圖完成，支付設計總價 50%，計新台幣 <b>${Number(p.designStage2 || 0).toLocaleString()}</b> 元整。<br>
+                    1. 設計合約簽訂三日內，甲方支付第一期款計新台幣 ${Number(p.designStage1 || 0).toLocaleString()} 元整，乙方開始進行繪圖服務。<br>
+                    2. 匯款帳號<br>
+                    <div style="padding-left:14px; margin-top:2px;">
+                      匯款銀行: 台灣企銀——北屯分行(050-5011)<br>
+                      戶名: 暮川設計有限公司<br>
+                      匯款帳號: 501-12-201121
+                    </div>
                   </div>
-                  <div class="a4-clause-title" style="margin-top:12px;">第八條 雙方履約責任</div>
-                  <div style="line-height:1.65;">
-                    (一) 甲乙雙方不得無故任意停止或終止本合約。甲方需尊重乙方之專業意見。<br>
-                    (二) 乙方辦理各項工作均不得違反建築物室內裝修管理辦法與相關法令。<br>
-                    (三) 本合約自簽約日起生效，製成正本壹式貳份由雙方各執乙份。
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:16px; margin-bottom:6px;">四、室內設計變更:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    1. 經甲方書面通知乙方辦理下列變更設計項目時，乙方應配合辦理:<br>
+                    <div style="padding-left:14px;">
+                      (1) 未涵蓋於本合約內之新增或減少項目及範圍，其變更設計服務費用，由雙方另行協議定之。
+                    </div>
+                    2. 甲方應給付額外費用之設計變更時:<br>
+                    <div style="padding-left:14px;">
+                      (1) 甲方於規劃設計審定完成時，變更計畫目標而應重新辦理之規劃設計。<br>
+                      (2) 甲方於規劃設計審定完成時，變更規劃設計之部分要求條件而造成部分變更之事實。<br>
+                      (3) 因辦理期間有關法令變更而致使重新規劃或辦理之事項事實。
+                    </div>
+                    3. 乙方有下列變更設計項目時，不得向甲方要求增加工作期限及服務費用:<br>
+                    <div style="padding-left:14px;">
+                      (1) 原設計圖說未符合甲方要求之功能需求或可歸責乙方因素而導致之變更設計者。<br>
+                      (2) 乙方作有利於甲方之修改且經甲方同意者。
+                    </div>
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 2 頁，共 3 頁 —</div>
+                <div class="a4-page-footer">— 第 2 頁，共 5 頁 —</div>
               </div>
             </div>
 
+            <!-- ================= 設計合約內文 第 3 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <div class="a4-clause-title" style="margin-top:0;">第九條 合約爭議協調仲裁及管轄法院</div>
-                  <div style="line-height:1.65;">
-                    關於本約之解釋產生爭議時，同意以中華民國法律為依據處理，並以臺灣彰化地方法院為管轄法院。
-                  </div>
-                  <div class="a4-clause-title" style="margin-top:14px;">第十條 保密協議與著作權歸屬</div>
-                  <div>依本合約設計之圖說著作權歸雙方所有。乙方僅提供紙本設計圖集，不另提供二維圖檔電子檔。</div>
-                  <div class="a4-signature-grid" style="margin-top:50px;">
-                    <div>
-                      <b>立約書人 甲方（委任人）：</b><br>
-                      負責人(簽章)：____________________<br>
-                      身分證字號(統編)：${p.clientId || '________________'}<br>
-                      地址：${p.address || '________________________________'}<br>
-                      電話：____________________<br>
-                      日期：中華民國 ${p.startROC.y} 年 月 日
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.3rem; letter-spacing:2px; margin-bottom:18px; border-bottom:1px solid #111; padding-bottom:6px;">室內設計合約書</h3>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:6px;">五、雙方履約責任:</div>
+                  <div style="font-size:0.87rem; line-height:1.82; text-align:justify; padding-left:4px;">
+                    1. 甲乙雙方不得無故任意停止或終止本合約，並不得拖延本合約工作之進行。甲方於設計繪圖或施工工程中請尊重乙方設計專業之學養，甲方不得干預乙方專業執行之項目，並需尊重乙方專業意見，不得任意更改乙方所提之設計方案。<br>
+                    2. 乙方辦理各項工作，均不得違反內政部營建署建築物室內裝修管理辦法，建築法及其他相關法令，乙方並應負室內設計師之責任。<br>
+                    3. 乙方應善盡管理之責任及誠實信用原則辦理甲方委託之一切應辦事項，不得有不正當行為及違反或廢弛業務上應盡之義務。<br>
+                    4. 乙方有下列情形之一者，甲方得以書面解除本合約並結算設計費用:<br>
+                    <div style="padding-left:14px;">
+                      (1) 無正當理由無故延遲交付甲方完工事項(上述委任服務範圍內之規定工作細項)經甲方催告一個月乙方仍無法完成者。<br>
+                      (2) 未依相關法規設計及雙方協議之施工需求、預算及條件辦理，經甲方提出更改催告一個月乙方仍未予修正完成者。<br>
+                      (3) 違反本約履約責任及有關規定經仲裁或判決確定者。
                     </div>
-                    <div>
-                      <b>立約書人 乙方（受任人）：</b>暮川設計有限公司<br>
-                      負責人：鄭志平 ｜ 設計師：鄭翔壕<br>
-                      統一編號：60385150<br>
-                      地址：彰化縣秀水鄉金興村番花路79巷17-5號<br>
-                      電話：0966-213-899
+                    5. 甲方有下列情形之一者，乙方得以書面解除本合約並結算設計費用:<br>
+                    <div style="padding-left:14px;">
+                      (1) 甲方若無正當理由無故延遲交付乙方設計費用，經乙方催告達一個月甲方仍無回應，乙方得以書面通知甲方終止合約內容及結算設計費用。<br>
+                      (2) 非因乙方之緣故合約進度落後達二個月以上，甲方仍不予協調或協議修訂合約者，乙方得以書面通知甲方終止合約內容及結算設計費用。<br>
+                      (3) 甲方若於設計定案後，欲修改設計內容，則因修改而產生之繪圖工時及現場修改工本費由乙方向甲方請款實報實銷，甲方不得異議。
                     </div>
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 3 頁，共 3 頁 —</div>
+                <div class="a4-page-footer">— 第 3 頁，共 5 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 設計合約內文 第 4 頁 ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.3rem; letter-spacing:2px; margin-bottom:18px; border-bottom:1px solid #111; padding-bottom:6px;">室內設計合約書</h3>
+
+                  <div style="font-size:0.87rem; line-height:1.82; text-align:justify; padding-left:4px;">
+                    6. 因自然不可抗力或人為不可歸責於任一方之事故發生，致使影響本合約之進行者，應由雙方共同協議處理之。<br>
+                    7. 甲乙雙方未經他方書面同意，不得將本合約之權利義務移轉第三人。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">六、本合約自簽約日起生效，並製成正本壹式貳份由甲乙雙方各持乙份以資信守。</div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">七、合約爭議協調仲裁及管轄法院:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    本合約具有法律訴訟效用，關於本約之解釋產生爭議或糾紛時，雙方同意依下列方式解決之:<br>
+                    1. 雙方以協調方式於一個月內未達成協議時，得依中華民國商務仲裁條例提付仲裁會解決之，仲裁之判斷得為強制執行。<br>
+                    2. 不以仲裁方式解決者，雙方若進行有關本合約之民事訴訟時，同意以中華民國法律為依據處理，並以彰化地方法院為管轄法院。<br>
+                    3. 本合約若雙方任一方違約事實成立，此份合約可為民事訴訟之締約證物。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">八、委任者資訊之利用:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    乙方僅得於履行本合約之目的範圍內蒐集處理及利用甲方之個人資料。但相關法律或法律具體明確授權之法規命令另有規定者，不在此限。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">九、保密協議:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    甲乙雙方保證凡因本合約所知悉對方之秘密決不外洩，如有違反應賠償對方因此所生之損害。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">十、著作權之歸屬:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    1. 依本合約設計之圖說無論甲方施工與否，其著作權歸雙方所有。<br>
+                    2. 因本圖說屬專業智慧之財產，乙方僅提供紙本設計圖集，不另提供二維圖檔之電子檔案格式。<br>
+                    3. 甲方欲使用前項設計圖說於本合約以外之工程地點或其他用途時，需經乙方書面同意。但有前項另有約定或甲方合理使用之情形者，不在此限。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:6px;">十一、其他事項:</div>
+                  <div style="font-size:0.87rem; line-height:1.8; text-align:justify; padding-left:4px;">
+                    1. 合約簽訂後之任何修正及補充均需經雙方協調並以書面為之。<br>
+                    2. 本合約有未盡事宜者，依相關法令及平等互惠與誠實信用原則協議之。
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 4 頁，共 5 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 設計合約內文 第 5 頁 (立約書人簽章) ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.3rem; letter-spacing:2px; margin-bottom:28px; border-bottom:1px solid #111; padding-bottom:6px;">室內設計合約書</h3>
+
+                  <div style="font-family:'Noto Serif TC', serif; font-size:1.2rem; font-weight:700; margin-bottom:36px; letter-spacing:2px;">立約書人簽章</div>
+
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; font-size:0.95rem; line-height:2.4; margin-bottom:60px;">
+                    <div>
+                      <b>甲&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;方:</b> ${p.projectName || ''}<br>
+                      <b>身分證字號(統編):</b> ${p.clientId || '____________________'}<br>
+                      <b>地&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;址:</b> ${p.address || ''}<br>
+                      <b>電&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;話:</b> ____________________<br>
+                      <div style="margin-top:20px;">(簽章)</div>
+                    </div>
+                    <div>
+                      <b>乙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;方:</b> 暮川設計有限公司<br>
+                      <b>負&nbsp;&nbsp;責&nbsp;&nbsp;人:</b> 鄭志平<br>
+                      <b>設&nbsp;&nbsp;計&nbsp;&nbsp;師:</b> 鄭翔壕<br>
+                      <b>統一編號:</b> 60385150<br>
+                      <b>地&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;址:</b> 彰化縣秀水鄉金興村番花路79巷17-5號<br>
+                      <b>電&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;話:</b> 0966-213-899<br>
+                      <div style="margin-top:20px;">(簽章)</div>
+                    </div>
+                  </div>
+
+                  <div style="text-align:right; font-size:1rem; font-weight:600; letter-spacing:2px; margin-top:40px;">
+                    中華民國&nbsp;&nbsp;&nbsp;&nbsp;${p.startROC.y}&nbsp;&nbsp;&nbsp;&nbsp;年&nbsp;&nbsp;&nbsp;&nbsp;${p.startROC.m}&nbsp;&nbsp;&nbsp;&nbsp;月&nbsp;&nbsp;&nbsp;&nbsp;${p.startROC.d}&nbsp;&nbsp;&nbsp;&nbsp;日
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 5 頁，共 5 頁 —</div>
               </div>
             </div>
           `;
@@ -4307,98 +4425,365 @@
         }
         // 4. 工程承攬內文 (完全動態編譯自訂期數與 % 數)
         else if (this.currentDocTab === 'constr_body') {
-          const stageListHtml = p.calculatedStages.map((stg, idx) => {
-            const zhNum = numToZh[idx] || (idx + 1);
-            return `(${zhNum}) ${stg.name}（支付總價 ${stg.pct}%）：新臺幣 <b>$${stg.amount.toLocaleString()}</b> 元整。<br>`;
-          }).join('');
+          const cStage1 = Number(p.constrStage1 || Math.round(p.finalPayable * 0.3)).toLocaleString();
+          const cStage2 = Number(p.constrStage2 || Math.round(p.finalPayable * 0.2)).toLocaleString();
+          const cStage3 = Number(p.constrStage3 || Math.round(p.finalPayable * 0.2)).toLocaleString();
+          const cStage4 = Number(p.constrStage4 || Math.round(p.finalPayable * 0.2)).toLocaleString();
+          const cStage5 = Number(p.constrStage5 || Math.round(p.finalPayable * 0.1)).toLocaleString();
 
           canvas.innerHTML = `
+            <!-- ================= 工程承攬內文 第 1 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <h2>建築物室內裝修工程承攬契約書</h2>
-                  <div style="margin-bottom:12px;">
-                    立契約書人 <br>
-                    消費者（以下簡稱甲方）：<b>${p.projectName}</b><br>
-                    業者（以下簡稱乙方）：<b>暮川設計有限公司</b><br>
-                    茲因甲方委託乙方辦理室內裝修工程，經雙方同意訂立本契約，約定條款如下：
+                  <h2 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.5rem; letter-spacing:3px; margin-bottom:16px; padding-bottom:8px; border-bottom:1.5px solid #111;">建築物室內裝修工程承攬契約書</h2>
+                  
+                  <div style="font-size:0.9rem; line-height:1.85; margin-bottom:14px; text-align:justify;">
+                    立契約書人—————<br>
+                    消費者(以下簡稱甲方): <b>${p.projectName || '____________________'}</b><br>
+                    業者(以下簡稱乙方): <b>暮川設計有限公司</b><br>
+                    茲因甲方委託乙方辦理室內裝修工程,經雙方同意訂立本契約,約定條款如下:
                   </div>
-                  <div class="a4-clause-title">第一條 工程案名稱</div>
-                  <div>工程案名稱：${p.projectName}裝修工程案</div>
 
-                  <div class="a4-clause-title">第二條 工程案地點</div>
-                  <div>工程案地點：${p.address}</div>
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第一條 工程案名稱</div>
+                  <div style="font-size:0.88rem; line-height:1.75; margin-bottom:10px; padding-left:4px;">
+                    工程案名稱: ${p.projectName ? p.projectName + '裝修工程案' : '____________________裝修工程案'}
+                  </div>
 
-                  <div class="a4-clause-title">第三條 工程範圍</div>
-                  <div>設計施工圖說、估價單及範圍說明書規範確實施工，均為本契約之一部分。<br>
-                  (一)乙方依統包整合原則負責工項協調與安排。(二)甲方自聘工班介入之區域品質由甲方自負。</div>
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第二條 工程案地點</div>
+                  <div style="font-size:0.88rem; line-height:1.75; margin-bottom:10px; padding-left:4px;">
+                    工程案地點: ${p.address || '________________________________________________'}
+                  </div>
 
-                  <div class="a4-clause-title">第四條 工程施工期間</div>
-                  <div>自中華民國 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日起至中華民國 ${p.endROC.y} 年 ${p.endROC.m} 月 ${p.endROC.d} 日止。</div>
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第三條 工程範圍</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    設計、施工、圖說、文件規格應經甲方同意,乙方應按設計施工圖說文件、估價單及施工範圍說明書規範確實施工,其圖說文件及估價單如附件,均為本契約之一部分。<br>
+                    (一)乙方依專業統包整合為原則負責工項協調與工序安排,甲方及第三人不得任意介入或指揮現場施工。<br>
+                    (二)如甲方改採或另行安排自聘工班介入,應事前書面通知乙方並經乙方同意;介入區域之品質、工安及保固由甲方自負,乙方對因此造成之延宕、返工或缺失不負責,相關費用由甲方負擔,工期相對順延。
+                  </div>
 
-                  <div class="a4-clause-title">第五條 工程總價</div>
-                  <div>工程總價計新臺幣 $${p.finalPayable.toLocaleString()} 元(含稅，以下同)，詳如估價單。</div>
-
-                  <div class="a4-clause-title">第六條 付款辦法</div>
-                  <div style="line-height:1.75;">
-                    甲方付款方式如下：<br>
-                    ${stageListHtml}
-                    (${numToZh[p.calculatedStages.length] || (p.calculatedStages.length + 1)}) 甲方應自接獲請款日起7日內支付，逾期乙方得停工並按日收取違約金。
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第四條 工程施工期間</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    <b>自中華民國 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日起至中華民國 ${p.endROC.y} 年 ${p.endROC.m} 月 ${p.endROC.d} 日止。</b><br>
+                    遇下列情形工期自動順延,乙方不負遲延責任:<br>
+                    (一)甲方之設計或材料變更、等待甲方確認或指示;<br>
+                    (二)不可抗力之天災或人禍、政府命令停工、或建築物結構狀況無法施工;<br>
+                    (三)甲方未依期付款、未交付場地或第三人(含甲方自聘工班)介入致延宕;<br>
+                    (四)他包配合或供料不及、或法定查驗流程所需之合理時間。
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 1 頁，共 3 頁 —</div>
+                <div class="a4-page-footer">— 第 1 頁，共 8 頁 —</div>
               </div>
             </div>
 
+            <!-- ================= 工程承攬內文 第 2 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <div class="a4-clause-title">第七條 乙方告知事項</div>
-                  <div>室內裝修應申請許可，如甲方選擇不申請，若被檢舉罰責由甲方自行吸收。不可抗力事故工期順延。</div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
 
-                  <div class="a4-clause-title">第八條 代辦及其他費用</div>
-                  <div>社區管委會要求繳納之裝修押金、保證金、清潔費等，悉由甲方負擔。</div>
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:4px;">第五條 工程總價</div>
+                  <div style="font-size:0.88rem; line-height:1.75; padding-left:4px;">
+                    工程總價計新臺幣 <b>$${Number(p.finalPayable || 0).toLocaleString()}</b> 元(含稅,以下同),詳如估價單。
+                  </div>
 
-                  <div class="a4-clause-title">第九條 老屋既存狀況及追加工程</div>
-                  <div>潛在漏水、壁癌等施工前不易辨識之問題，修復工料費均屬追加工程，經甲方確認後施作。</div>
-
-                  <div class="a4-clause-title">第十條 工程變更</div>
-                  <div>指示廢棄之無法退貨材料，甲方以成本價收購。因變更致停工逾三日甲方支付待命費每班每日 $3,000 元。</div>
-
-                  <div class="a4-clause-title">第十一條 工程驗收</div>
-                  <div>完工後甲方應於10日內會同驗收。無故未會同經催告兩次，推定完成驗收並應於5日內支付尾款。</div>
-
-                  <div class="a4-clause-title">第十二條 提前使用與違約</div>
-                  <div>未驗收提前使用致延宕由甲方負責。任一方違約逾期每日課總價千分之一違約金。</div>
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:4px;">第六條 付款辦法</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    甲方付款方式如下:<br>
+                    (一)本契約簽訂日,甲方支付工程總價30%為簽約及進場準備金,計 <b>$${cStage1}</b> 元。<br>
+                    (此款用於材料下單、工班排程及施工前備料作業。)<br>
+                    (二)乙方通知基礎工程(拆除完畢、水電前期配管並泥作回填完畢),即將進入木作工程, 甲方應支付工程總價20%,計 <b>$${cStage2}</b> 元。<br>
+                    甲方未付款者,乙方得暫緩進場,工期相對順延。<br>
+                    (三)乙方通知即將進入油漆工程前,甲方應支付工程總價20%,計 <b>$${cStage3}</b> 元。<br>
+                    甲方未付款者,乙方得暫緩進場,工期相對順延。<br>
+                    (四)乙方通知進入系統櫃工程前,甲方應先支付工程總價20%,計 <b>$${cStage4}</b> 元。 甲方未付款者,乙方得暫緩進場,工期相對順延。<br>
+                    (五)乙方通知清潔完畢,且甲方已驗收作業完成並無需修繕調整<br>
+                    甲方應支付工程總價10%,計 <b>$${cStage5}</b> 元。<br>
+                    (五)甲方應自接獲乙方請款日起7日內支付。甲方逾期未付款者:<br>
+                    <div style="padding-left:14px;">
+                      1. 乙方得暫停施工並通知甲方,工期相對順延,乙方不負遲延責任。<br>
+                      2. 自逾期之日起,按未付款項每日千分之一 (1/1000) 計算違約金。<br>
+                      3. 停工期間甲方應支付工班待命費,每班每日新臺幣3,000元。
+                    </div>
+                    (六)乙方得視工程進度分期就已完成或已進場之材料及工料費請款;甲方不得以其他爭議為由拒絕就已完成部分付款。
+                  </div>
                 </div>
-                <div class="a4-page-footer">— 第 2 頁，共 3 頁 —</div>
+                <div class="a4-page-footer">— 第 2 頁，共 8 頁 —</div>
               </div>
             </div>
 
+            <!-- ================= 工程承攬內文 第 3 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
                 <div>
-                  <div class="a4-clause-title">第十三條 契約解除、終止與保固</div>
-                  <div>(一)材料未付清前所有權歸乙方。(二)完工驗收起保固一年(耗材除外)。(三)爭議管轄法院為臺灣彰化地方法院。</div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
 
-                  <div class="a4-signature-grid" style="margin-top:60px;">
-                    <div>
-                      <b>立約書人甲方：</b><br>
-                      負責人(簽章)：____________________<br>
-                      統編(身分證)：${p.clientId}<br>
-                      地址：${p.address}<br>
-                      日期：民國 115 年 月 日
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:4px;">第七條 乙方告知事項</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    乙方應告知甲方下列事項:<br>
+                    (一)建築物室內裝修設計或施工涉及固著於建築物構造體之天花板、內部牆面或高度超過一點二公尺固定於地板之隔屏或兼作櫥櫃使用之隔屏之裝修施工或分間牆之變更者,應申請審查許可,如甲方已知此事項,選擇不申請施工許可證或不按照規範申請,若日後被檢舉,所有罰責將由甲方自行吸收。<br>
+                    (二)裝修材料應合於建築技術規則之規定,且不得妨害或破壞防火避難設施、消防設備、防火區劃及主要構造。 前項告知不得減免乙方於本契約應負之義務及責任。<br>
+                    <b>(三)不可抗力與工期調整:</b><br>
+                    <div style="padding-left:14px;">
+                      1. 如因天災、法定傳染病、政府法令更迭、原廠斷貨或非可歸責於乙方之加工延誤等不可抗力因素,導致無法如期完畢者,乙方應於事故發生後3日內以書面(含通訊軟體)告知甲方。<br>
+                      2. 乙方須提出具體相關證明(如公會證明、原廠停產通告、氣象觀測紀錄等),由雙方協議按受影響之實際日數順延工期,乙方不負遲延責任。<br>
+                      3. 若影響期間超過14日,雙方得協議變更建材或調整施工方案。
                     </div>
-                    <div>
-                      <b>立約書人乙方：</b>暮川設計有限公司<br>
-                      負責人：鄭志平 ｜ 設計師：鄭翔壕<br>
-                      統一編號：60385150<br>
-                      地址：彰化縣秀水鄉金興村番花路79巷17-5號<br>
-                      電話：0966-213-899
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:14px; margin-bottom:4px;">第八條 代辦及其他費用</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    乙方代辦及甲方負擔之其他費用應依下列規定辦理:<br>
+                    (一)依法應辦理消防查驗或其他申請,由乙方代為辦理時,其發生查驗費用及相關專業簽證費用,依約應由甲方負擔者,金額為&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;元。<br>
+                    (二)其他依法令應由甲方繳納之各項規費,應由甲方負擔者,甲方應於簽約時或約定於預定申請送件日&nbsp;&nbsp;&nbsp;&nbsp;日前,全數預付,並於交屋時結清,憑單據核實多退少補。<br>
+                    (三)裝修期間如社區管理委員會、區分所有權人或管理組織要求繳納裝修押金、施工保證金、公共區域清潔維護費、電梯保護費或其他相關規費者,悉由甲方負擔。乙方如先行代墊,甲方應於乙方通知後3日內憑單據全額給付,不得遲延。施工期間如有因甲方指示或使用不當致公共區域損壞者,其修繕及賠償費用由甲方負責;惟屬乙方施工疏失所致者,由乙方負責修復。
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 3 頁，共 8 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 工程承攬內文 第 4 頁 ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:4px;">第九條 甲方負責事項</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    (一)乙方施工期間,有第三人就甲方之合法權源提出異議或阻礙進行者,應由甲方負責排除,否則乙方因此所受之損害應由甲方賠償,工期相對順延。<br>
+                    (二)本工程若由甲方供給材料而未能按期供應,或因他包配合工程而未能按期施工,致使乙方之工程進度遲延時,得依遲延日數延長本工程施工期限;其延長期間逾30日致乙方受有損害者,應由甲方賠償。甲方供料不符規範或造成返工之費用,由甲方負擔。<br>
+                    (三)甲方或第三人(含自聘工班)不得未經乙方同意進場施工;如介入,介入區域之品質與保固由甲方自負, 並應負擔乙方因協調、返工及工序銜接所生費用。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十條 乙方負責事項</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    (一)乙方應依本契約書、所附圖說文件及估價單施工,其有違反致甲方或其他第三人任何損害,乙方應負賠償責任。<br>
+                    (二)乙方得依專業分工原則,將本工程分包給第三人承作,但不得將本工程轉包或全部分包予第三人承作。<br>
+                    (三)乙方工程完成後應進行環境清潔,並將施工期間內造成公共設施之損害予以修復。<br>
+                    (四)乙方應採取適當之安全措施,以避免發生損及他人生命、身體、健康或財產之事故;如遇有緊急事故,乙方應立即採取必要之措施,並儘速通知甲方。<br>
+                    (五)乙方應遵守環境保護、勞工安全衛生等相關法規,並辦理有關工程意外保險及火災保險。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十一條 老屋既存狀況之不可預見性及追加工程</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    本工程屬既有建築物之室內裝修,因場刊期間無法進行破壞性檢測,對於結構體潛在漏水、白華、腐朽、蟲蛀、混擬土脆化、鋼筋外露銹蝕、管線老化、暗埋電線、地坪空鼓、磚牆鬆動、地下水位滲漏、壁癌等施工前不易由外觀辨識之問題,甲乙雙方同意如下處理:<br>
+                    (一)開工後若經拆除或施工過程中發現場刊時無法預先辨識或甲方未事先告知之既存問題, 其所需之修復工法、材料及人工費用,均屬「追加工程項目」,不包含於本契約原估價範圍內。<br>
+                    (二)乙方應提出追加工程之處置方式及估價明細,並以書面、簡訊或通訊軟體通知甲方確認。 甲方同意後,乙方方得進行施作。<br>
+                    (三)於追加工程項目未獲甲方確認前,乙方得暫停相關工項施工, 工期自動順延,乙方不負遲延責任,且甲方不得以此為由要求減價或求償。<br>
+                    (四)如甲方不同意追加工程費用,且不願依現場狀況採行修復工法者, 乙方得以書面通知解除本契約,並依已完工程量及已下訂材料成本結算,甲方不得拒絕。
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 4 頁，共 8 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 工程承攬內文 第 5 頁 ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:4px;">第十二條 工程變更</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    工程變更應依下列規定辦理:<br>
+                    (一)本工程範圍及內容得經雙方同意後增減之,其增減部分如與本工程契約附件內所訂項目相同時,即比照該單價計算增減金額;其增減項目與本契約附件有所不同時,應由雙方議定其金額。由甲方簽認後施工,並用書面作為本契約之附件(包含電子訊息同意)。<br>
+                    (二)增減工程價款之支付或扣減,原則應於該項工序施工前支付;或依乙方請款,按日進度支付。<br>
+                    (三)因甲方指示廢棄部分工程,其已訂購之成品、半成品之費用、材料,由甲乙雙方依採購成本結算;如無法退貨者,甲方同意以「成本價」收購。<br>
+                    (四)設計變更、工程變更致使局部或全部停工,其合理延展工程期限,由雙方協議之。停工逾三日者,甲方並應支付工班待命費每班每日新臺幣3,000元。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十三條 工期展延</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    有下列情事之一影響工程進度,乙方得向甲方要求展延合理工期,其天數由雙方協議之:<br>
+                    (一)甲方變更設計:包含施工前或施工中,甲方書面指示,要求變更原始設計、機能、空間尺寸、材料及施工方法等,而導致局部或全部停工。<br>
+                    (二)不可抗拒之天災、人禍或建築物結構狀況無法施工等因素。<br>
+                    (三)因等候甲方確認之施工圖說文件或材料樣板,致局部或全部停工。<br>
+                    (四)甲方為配合其他工程之進行而指示局部或全部停工者。<br>
+                    (五)非可歸責於乙方因素或第三人介入所致之延遲或停工者。<br>
+                    (六)甲方逾期付款或未依約支付追加變更款項。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十四條 工程驗收</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    (一)本工程完工時,乙方應以書面或電子訊息通知甲方驗收,甲方應於通知送達之翌日起10日內會同乙方進行驗收。如甲方無正當理由未於期間內會同驗收,經乙方先後再定相當期限之書面催告二次仍未會同驗收者,推定完成驗收程序。<br>
+                    (二)經驗收發現瑕疵部分,乙方應於甲方書面通知或驗收紀錄所協商約定之期限內修繕,並依前款方式通知甲方再行驗收;乙方未於修繕期限內完成修繕者,經甲方催告,乙方仍未完成修繕者,甲方得另委託第三人修繕, 所生費用得由未撥付款項支應。<br>
+                    (三)前二款規定,不妨礙甲方就工作物之瑕疵,依民法向乙方主張承攬瑕疵擔保、不完全給付或其他責任。
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 5 頁，共 8 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 工程承攬內文 第 6 頁 ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
+
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    (四)驗收完成或視為完成者,甲方應於5日內支付應付之工程款;工作物之瑕疵經驗收完成後逾1個月者,甲方不得主張。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十五條 工程管理不當責任</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    乙方於工程施工期間,因工程管理疏失造成甲方或第三者之損失,損失之金額應由乙方負責賠償。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十六條 提前使用</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    (一)甲方對於已完成之工程,如有提前使用之必要,應會同乙方驗收完成後使用,且依第十三條約定完成驗收者,乙方得請領該已完成部分之工程全部費用。<br>
+                    (二)甲方對於未完成之工程,得經乙方同意後使用。但因甲方使用致工程延宕,或造成工程瑕疵時,甲方應負其責,並應補償乙方因此所生之費用,工期相對順延。<br>
+                    (三)甲方對提前使用部分,應負保管之責。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十七條 違約之處理</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    (一)乙方違約之處理:乙方如未於期限內完成工程者,乙方應個別按日以工程總價,每逾期1日,課以工程總價千分之一之遲延違約金予甲方。違約金總額以本契約總價百分之十為限。但因甲方之因素或不可歸責於乙方之事由而遲延者,不在此限。<br>
+                    (二)甲方違約之處理:甲方未依約定付款時,經乙方書面定相當期間催告履行,仍不履行付款者,甲方應個別按日以工程總價,每逾期1日,課以工程總價千分之一之違約金予乙方,違約金總額以本契約總價百分之十為限。 並同意乙方得暫停施工、工期順延,且甲方應負擔工班待命費。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第十八條 契約解除</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    甲乙雙方於一方有下列情形之一者,他方得解除本契約:<br>
+                    (一)乙方簽約後,無正當理由遲未依第四條約定期限進場施工,超過約定期限30日以上者。<br>
+                    (二)甲方無正當理由遲未交付場地,致乙方無法進場施工。<br>
+                    (三)乙方進場後發現,甲方所提供之建築物有結構問題,會同甲方進行結構鑑定,鑑定結果屬實,得以解除契約。<br>
+                    (四)1.如屬乙方施工方式或設計瑕疵所致,鑑定費用由乙方負擔,乙方並應提出改善方案。2.如屬甲方過往變更、委外工班或自行施作所致,鑑定費用由甲方負擔,並應依鑑定意見調整施工範圍與費用。3.如鑑定結果無法明確歸責於雙方任何一方者,鑑定費用由甲乙雙方各自負擔一半,並依鑑定建議協議調整工法與工期。
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 6 頁，共 8 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 工程承攬內文 第 7 頁 ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:4px;">第十九條 契約終止之事由</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    甲乙雙方契約終止應依下列規定辦理:<br>
+                    (一)甲方之終止權:<br>
+                    <div style="padding-left:14px;">
+                      1. 本契約工程未完成前,甲方得以書面終止契約,但應賠償乙方因契約終止而產生之損害(含已施作、已進場材料、不可退貨之預購品、退貨手續費及管理費等)。<br>
+                      2. 乙方有下列情形之一者,甲方得以書面終止本契約:因可歸責於乙方之事由致未能依第四條規定施工期間完成工作,經甲方書面催告逾15日仍無法完成者;或違反第十條第二款但書規定,乙方將本契約工程轉包或全部分包給第三人承作。
+                    </div>
+                    (二)乙方之終止權:<br>
+                    <div style="padding-left:14px;">
+                      因可歸責於甲方之事由致甲方遲延給付乙方之工程費用,經乙方書面催告逾15日仍未給付者,乙方得以書面終止本契約;並得請求已完成部分價款、材料成本及停工待命費。
+                    </div>
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第二十條 契約終止後之處理</div>
+                  <div style="font-size:0.88rem; line-height:1.75; text-align:justify; padding-left:4px;">
+                    契約終止後甲乙雙方應依下列規定辦理結算:<br>
+                    (一)非可歸責於甲方部分:<br>
+                    <div style="padding-left:14px;">
+                      1. 已施作之工程經雙方驗收同意者依估價單內項目及單價結算。<br>
+                      2. 已預先訂購之成品與半成品、材料由乙方自理,甲方毋須支付費用。甲方若願收購,則由雙方協議價購。
+                    </div>
+                    (二)可歸責於甲方部分:<br>
+                    <div style="padding-left:14px;">
+                      1. 已施作之工程經雙方驗收同意者,依估價單內項目及單價結算。<br>
+                      2. 已預先訂購之成品與半成品、材料,依估價單項目單價計算之,由甲方收購。乙方若願收購,則由雙方協議價購。
+                    </div>
+                    (三)不可歸責於甲乙任何一方之事由(如不可抗力、政府政策、主管機關停工命令、或雙方同意終止等)致契約終止者:<br>
+                    <div style="padding-left:14px;">
+                      1. 已施作完成且經雙方驗收同意之工程項目,依原估價單所列項目及單價結算。<br>
+                      2. 乙方已預先訂購之成品、半成品及材料,由甲方以乙方實際採購成本價買受;若雙方另有書面協議者,從其約定。<br>
+                      3. 無法退貨之材料或需支付退貨手續費者,甲方同意按實際成本加10%管理處理費結算。
+                    </div>
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第二十一條 權利讓與及義務承擔</div>
+                  <div style="font-size:0.88rem; line-height:1.75; padding-left:4px;">
+                    甲乙雙方未經他方書面同意,不得將本契約之權利義務移轉第三人。但依第十條第二款專業分工之分包原則辦理者,不在此限。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第二十二條 所有權</div>
+                  <div style="font-size:0.88rem; line-height:1.75; padding-left:4px;">
+                    本契約工程所有乙方自備之裝修材料未固著前,在甲方尚未付清該部分工程款前,其所有權歸乙方所有。但該材料甲方已付款者,不在此限。
+                  </div>
+                </div>
+                <div class="a4-page-footer">— 第 7 頁，共 8 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 工程承攬內文 第 8 頁 ================= -->
+            <div class="a4-sheet">
+              <div class="a4-body-page">
+                <div>
+                  <h3 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.25rem; letter-spacing:2px; margin-bottom:16px; border-bottom:1px solid #111; padding-bottom:6px;">建築物室內裝修工程承攬契約書</h3>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:0; margin-bottom:4px;">第二十三條 保固期限及範圍</div>
+                  <div style="font-size:0.85rem; line-height:1.7; text-align:justify; padding-left:4px;">
+                    乙方對於施作之工程,應自驗收完成之日起負保固一年,在保固期間內非可歸責於乙方之損壞者,乙方應無條件照圖說文件負修復之責。<br>
+                    但因不可抗力及材料自然之因素,或甲方使用不當、未善盡保管之責、甲方自聘工班介入或自行變更所造成之損害及消耗性物品(如燈泡...等),不在此限。保固期限經過後,若須由乙方修繕調整,乙方得以對甲方進行報價,雙方協議後得以進行。<br>
+                    本契約所列電器設備均屬乙方代為協助採購,設備本身之品質、性能、保固內容及保修責任,均依原廠或供應商之保固條款辦理,乙方不負電器產品本身之瑕疵擔保責任。乙方之責任僅限於該設備之運送、安裝及驗收點交。 點交完成後,甲方應自行向品牌商或供應商申請保修服務。驗收完成後經使用期間,因設備本身故障、功能失常、 自然耗損、原廠零件維修、年限老化,或原廠保固條件所列之情形,均由甲方直接聯繫原廠或供應商排定維修, 乙方無需陪同或負責現場協調。<br>
+                    如甲方仍需乙方協助到場陪同原廠或供應商進行檢測、維修者,乙方得就現場服務時間按新台幣1,500元/每小時(未滿一小時計)向甲方收取服務費。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:10px; margin-bottom:4px;">第二十四條 通知送達</div>
+                  <div style="font-size:0.85rem; line-height:1.7; text-align:justify; padding-left:4px;">
+                    本契約雙方所為之通知辦理事項,以書面通知時,均依本契約所載之地址為準,如任何一方遇有地址變更時,應即以書面通知他方,其因拒收或無法送達而遭退回二次者,以最後退件日推定已依本契約受通知,雙方仍宜以簡訊(電子郵件或其他約定方式)告知他方此通知之事由。<br>
+                    電子郵件、通訊軟體對話紀錄,得作為雙方往來及同意之佐證資料。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:10px; margin-bottom:4px;">第二十五條 爭議處理</div>
+                  <div style="font-size:0.85rem; line-height:1.7; text-align:justify; padding-left:4px;">
+                    因本契約發生之爭議,雙方得於直轄市、縣(市)政府消費爭議調解委員會、鄉(鎮、市、區)公所調解委員會或法院調解,或依下列方式擇一處理:<br>
+                    ☑ 除專屬管轄外,以標的物所在地之法院為第一審管轄法院。但不排除消費者保護法第四十七條或民事訴訟法第四百三十六條之九小額訴訟管轄法院之適用。<br>
+                    ☐ 依仲裁法規定進行仲裁。<br>
+                    (說明:建議勾選第一款法院管轄,以利實務處理。)
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:10px; margin-bottom:4px;">第二十六條 消費者資訊之利用</div>
+                  <div style="font-size:0.85rem; line-height:1.7; padding-left:4px;">
+                    乙方僅得於履行本契約之目的範圍內蒐集處理及利用甲方之個人資料。但相關法律或法律具體明確授權之法規命令另有規定者,不在此限。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:10px; margin-bottom:4px;">第二十七條 保密協議</div>
+                  <div style="font-size:0.85rem; line-height:1.7; padding-left:4px;">
+                    甲乙雙方保證凡因本契約所知悉對方之秘密決不外洩,如有違反應賠償對方因此所生之損害。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:10px; margin-bottom:4px;">第二十八條 附件效力及契約分存</div>
+                  <div style="font-size:0.85rem; line-height:1.7; padding-left:4px;">
+                    契約附件及雙方補充之書面協議均為本契約之一部分。本契約正本貳份,由雙方各執一份為憑,並自簽約日起生效。
+                  </div>
+
+                  <div class="a4-clause-title" style="font-size:1rem; margin-top:10px; margin-bottom:4px;">第二十九條 未盡事宜之處置</div>
+                  <div style="font-size:0.85rem; line-height:1.7; margin-bottom:14px; padding-left:4px;">
+                    本契約有未盡事宜者,依相關法令及平等互惠與誠實信用原則協議之。
+                  </div>
+
+                  <!-- 立委任契約書人簽章欄位 -->
+                  <div style="border-top:1.5px solid #111; padding-top:12px; margin-top:10px;">
+                    <div style="font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:700; margin-bottom:10px;">立委任契約書人</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px; font-size:0.88rem; line-height:2;">
+                      <div>
+                        <b>甲&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;方:</b> ${p.projectName || ''}<br>
+                        <b>負&nbsp;&nbsp;責&nbsp;&nbsp;人:</b> ____________________<br>
+                        <b>統一編號或國民身分證統一編號:</b> ${p.clientId || '____________________'}<br>
+                        <b>地&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;址:</b> ${p.address || ''}<br>
+                        <b>電&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;話:</b> ____________________
+                      </div>
+                      <div>
+                        <b>乙&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;方:</b> 暮川設計有限公司<br>
+                        <b>負&nbsp;&nbsp;責&nbsp;&nbsp;人:</b> 鄭翔壕<br>
+                        <b>統一編號:</b> 60385150<br>
+                        <b>地&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;址:</b> 彰化縣秀水鄉金興村番花路79巷臨18-3號<br>
+                        <b>電&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;話:</b> 0966213899
+                      </div>
+                    </div>
+                    <div style="text-align:right; font-size:0.92rem; font-weight:600; letter-spacing:2px; margin-top:16px;">
+                      中華民國&nbsp;&nbsp;&nbsp;&nbsp;${p.startROC.y}&nbsp;&nbsp;&nbsp;&nbsp;年&nbsp;&nbsp;&nbsp;&nbsp;${p.startROC.m}&nbsp;&nbsp;&nbsp;&nbsp;月&nbsp;&nbsp;&nbsp;&nbsp;${p.startROC.d}&nbsp;&nbsp;&nbsp;&nbsp;日
                     </div>
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 3 頁，共 3 頁 —</div>
+                <div class="a4-page-footer">— 第 8 頁，共 8 頁 —</div>
               </div>
             </div>
           `;
@@ -4406,52 +4791,257 @@
         // 5. 切結與聲明書
         else if (this.currentDocTab === 'affidavit') {
           canvas.innerHTML = `
-            <div class="a4-sheet">
-              <div class="a4-body-page">
+            <!-- ================= 第一頁：工程聲明切結書 ================= -->
+            <div class="a4-sheet" style="height:auto; min-height:1123px; margin-bottom:36px;">
+              <div class="a4-body-page" style="padding:48px 52px; justify-content:space-between;">
                 <div>
-                  <h2 style="text-align:center; font-family:'Noto Serif TC', serif; letter-spacing:2px; margin-bottom:24px;">工程聲明切結書</h2>
-                  <div style="margin-bottom:20px; line-height:2;">
-                    茲甲方 <b>${p.projectName}</b> 與乙方 <b>暮川設計有限公司</b> 簽訂「工程承攬契約書」。<br>
-                    施工地址：<b>${p.address}</b>，過程中乙方已建議甲方申請室內裝修許可，並遵循建築等相關法令，但甲方因有其他考量仍指示乙方辦理以下：
+                  <h2 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.6rem; letter-spacing:4px; margin-bottom:24px; padding-bottom:10px; border-bottom:2px solid #111111;">工程聲明切結書</h2>
+                  
+                  <div style="font-size:0.92rem; line-height:2; margin-bottom:20px; text-align:justify;">
+                    茲甲方 <b>${p.projectName || '____________'}</b> 與乙方 <b>暮川設計有限公司</b> 簽訂「工程承攬契約書」。<br>
+                    施工地址：<b>${p.address || '________________________________________________'}</b> ，過程中乙方已建議甲方申請室內裝修許可，並遵循建築等相關法令，但甲方因有其他考量仍指示乙方辦理以下：
                   </div>
-                  <div style="margin-bottom:20px; line-height:2.2; padding-left:16px;">
-                    <input type="checkbox" style="margin-right:8px;">不申請室內裝修許可<br>
-                    <input type="checkbox" style="margin-right:8px;">施作夾層<br>
-                    <input type="checkbox" style="margin-right:8px;">外推陽台<br>
-                    <input type="checkbox" style="margin-right:8px;">拆除廚房防火門<br>
-                    <input type="checkbox" style="margin-right:8px;">減少或移動消防灑水或感知器
+
+                  <div style="font-size:0.9rem; line-height:2.1; padding-left:12px; margin-bottom:24px;">
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">不申請室內裝修許可</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">施作夾層</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">外推陽台（說明：________________________________________________）</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">增加露台固定雨遮</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">拆除廚房防火門</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">減少或移動消防灑水或感知器</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">施工損及樑柱結構物或外牆（說明：________________________________）</div>
+                    <div><input type="checkbox" style="margin-right:8px; transform:scale(1.15);">其他（說明：____________________________________________________）</div>
                   </div>
-                  <div style="line-height:2; margin-bottom:40px;">
-                    以上事項，甲方同意免除乙方責任，甲方瞭解並願自負責任，特立此切結為憑。
+
+                  <div style="font-size:0.92rem; line-height:2; margin-bottom:20px; text-align:justify;">
+                    就上述事項，雙方同意於乙方依甲方指示或依約施作完成後，其後因未符相關法令以致甲方受有任何損害，乙方均不負任何賠償責任；且如因此所致第三人向乙方求償，或乙方因此受損害時，甲方應對乙方負賠償責任。<br>
+                    以上，乙方已明確告知甲方，甲方同意免除乙方責任，甲方瞭解並願自負責任，特立此切結為憑。
                   </div>
-                  <div style="display:flex; justify-content:space-between;">
-                    <div><b>立書人 甲方：</b>____________________<br><br>身分證字號：${p.clientId}</div>
-                    <div><b>乙方：</b>暮川設計有限公司<br><br>負責人：鄭翔壕 ｜ 統編：60385150</div>
+
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-top:40px; padding-top:24px; border-top:1px solid #111111; font-size:0.9rem; line-height:2;">
+                    <div>
+                      <b>立書人甲方：</b>${p.projectName || ''}<br>
+                      <b>身分證字號：</b>${p.clientId || '____________________'}<br>
+                      <b>簽章：</b>____________________<br>
+                      <b>通訊地址：</b>${p.address || ''}
+                    </div>
+                    <div>
+                      <b>乙方：暮川設計有限公司</b><br>
+                      <b>負責人：</b>鄭翔壕<br>
+                      <b>統一編號：</b>60385150<br>
+                      <b>公司地址：</b>彰化縣秀水鄉金興村番花路79巷17-5號
+                    </div>
+                  </div>
+                  
+                  <div style="text-align:right; margin-top:30px; font-size:0.9rem; font-weight:600; letter-spacing:2px;">
+                    中華民國 ${p.startROC.y} 年 ${p.startROC.m} 月 ${p.startROC.d} 日
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 1 頁，共 2 頁 —</div>
+                <div class="a4-page-footer">— 第 1 頁，共 4 頁 —</div>
               </div>
             </div>
 
-            <div class="a4-sheet">
-              <div class="a4-body-page" style="padding:48px 36px;">
+            <!-- ================= 第二頁：乙方聲明與承諾事項 (Part 1) ================= -->
+            <div class="a4-sheet" style="height:auto; min-height:1123px; margin-bottom:36px;">
+              <div class="a4-body-page" style="padding:40px 46px; justify-content:space-between;">
                 <div>
-                  <h3 style="font-family:'Noto Serif TC', serif; text-align:center; margin-bottom:16px; letter-spacing:2px;">乙方聲明與承諾事項</h3>
-                  <table class="a4-table" style="font-size:0.75rem; line-height:1.5;">
-                    <thead><tr><th style="width:18%;">項目</th><th style="width:22%;">問題</th><th>說明</th></tr></thead>
+                  <h3 style="font-family:'Noto Serif TC', serif; text-align:center; font-size:1.35rem; letter-spacing:3px; margin-bottom:16px; border-bottom:1.5px solid #111; padding-bottom:8px;">乙方聲明與承諾事項</h3>
+                  <table class="a4-table" style="font-size:0.77rem; line-height:1.6; border-collapse:collapse; width:100%;">
+                    <thead>
+                      <tr style="background:#F2F2F2;">
+                        <th style="border:1px solid #111; padding:7px 6px; width:15%; text-align:center;">項目</th>
+                        <th style="border:1px solid #111; padding:7px 6px; width:20%; text-align:center;">問題</th>
+                        <th style="border:1px solid #111; padding:7px 8px; text-align:center;">說明</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      <tr><td rowspan="2">合約行政</td><td>糾紛救濟處理</td><td>委由住宅消保會調處，鑑定費用雙方各半。</td></tr>
-                      <tr><td>清潔費與押金</td><td>裝修保證金及管委會費用由甲方負擔。</td></tr>
-                      <tr><td rowspan="2">品質承諾</td><td>嚴選材料</td><td>系統板採E1 V313，熱水管採不鏽鋼被覆。</td></tr>
-                      <tr><td>1年防漏保固</td><td>衛浴防漏保固1年，人為或天災因素除外。</td></tr>
+                      <tr>
+                        <td rowspan="2" style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">合約行政問題</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 糾紛救濟 處理原則</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">雙方委由社團法人台灣住宅品質消費者保護協會調處。由樂活輕裝修平台支付調處費用；若需鑑定，則甲乙雙方各付擔一半</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 裝潢保證金 及清潔費</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">【裝修保證金】由  甲方  乙方負擔，由  甲方  乙方辦理。<br>【大樓清潔費】由  甲方負擔，由  甲方  乙方辦理。</td>
+                      </tr>
+                      <tr>
+                        <td rowspan="4" style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">6331平台專屬承諾</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 6種嚴選材料</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">填縫劑採潤泰奈米防霉或其他台灣品牌。熱水管採用全段式不鏽鋼被覆熱水管。防水材料採用金絲猴複合式防水材料或其他台灣品牌。系統板材採用E1 V313等級。櫃體五金採用歐美或台製鉸鍊。櫃體五金採用歐美或台製緩衝滑軌。<br>施工時，上述品項都需要特別將品牌拍照做紀錄。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 3道防水工序</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">硬底施工，確保洩水坡度。浴廁地壁防水塗刷，壁面至少2道，地面至少3道。地坪防水12小時以上養護試水，確認無漏。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 3項安心服務</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">簡易圖面規劃。採用通訊軟體與客戶即時回報施工進度（現階段採用LINE）。施工完成線上評分。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 1年防漏保固</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">衛浴換新防漏水保固1年。如有天災或甲方人為因素所致則非保固範圍內。</td>
+                      </tr>
+                      <tr>
+                        <td rowspan="3" style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">客戶自行發包之工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 空調工程</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">乙方可協助與冷氣廠商溝通討論冷氣相關事宜（如冷氣及出迴風口位置），開會時屋主須全程在場。佈線及安裝時間由乙方通知甲方可施工時間，由甲方聯繫其廠商。安裝好的冷氣機室內及室外機僅由冷氣廠商保護。空調工程之驗收，須由甲方自行與廠商確認，乙方無法代驗。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 音響工程</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">音響、對講機設備等甲方自行發包的廠商，如需乙方協助處理施作（如施工順序、拉管或配線等），應於開工前先溝通清楚施作內容，勿等壁面或天花封板後才告知。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 設備工程 、家具</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">未驗收完成，甲方不可安排大型家具、設備進場。如設備有特需用電需求（電壓或專用迴路）須於施工前告知乙方。運送過程與現場搬運須注意事項（如電梯、門框大小），須由甲方廠商自行做專業評估。</td>
+                      </tr>
                     </tbody>
                   </table>
-                  <div style="display:flex; justify-content:space-between; margin-top:30px;">
-                    <span>甲方簽名：____________________</span>
-                    <span>乙方簽名：____________________</span>
+                </div>
+                <div class="a4-page-footer">— 第 2 頁，共 4 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 第三頁：乙方聲明與承諾事項 (Part 2) ================= -->
+            <div class="a4-sheet" style="height:auto; min-height:1123px; margin-bottom:36px;">
+              <div class="a4-body-page" style="padding:40px 46px; justify-content:space-between;">
+                <div>
+                  <h3 style="font-family:'Noto Serif TC', serif; text-align:center; font-size:1.35rem; letter-spacing:3px; margin-bottom:16px; border-bottom:1.5px solid #111; padding-bottom:8px;">乙方聲明與承諾事項 (續)</h3>
+                  <table class="a4-table" style="font-size:0.76rem; line-height:1.55; border-collapse:collapse; width:100%;">
+                    <thead>
+                      <tr style="background:#F2F2F2;">
+                        <th style="border:1px solid #111; padding:6px; width:15%; text-align:center;">項目</th>
+                        <th style="border:1px solid #111; padding:6px; width:20%; text-align:center;">問題</th>
+                        <th style="border:1px solid #111; padding:6px 8px; text-align:center;">說明</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:600; text-align:center; background:#FAFAFA;">拆除工程</td>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 拆除須知</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">主要結構（柱樑板、承重牆）皆不可拆除或打洞。</td>
+                      </tr>
+                      <tr>
+                        <td rowspan="3" style="border:1px solid #111; padding:7px 6px; font-weight:600; text-align:center; background:#FAFAFA;">塗裝工程</td>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 油漆刷痕</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">油漆僅為「塗料」，並無法完全修飾掉原底材不平整的狀況，此現象在間接光或投射燈照明下會更凸顯。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 油漆牆面裂痕</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">因地震力或冷縮熱脹等物理因素，於牆面、牆角交界處或不同隔間材質銜接處，油漆粉刷之牆面可能會有些微裂縫，此屬正常現象，不在保固範圍。牆面刷漆，會有刷痕實屬正常現象，若甲方對此有特別要求，建議施工方式改為噴塗（費用另計）。噴塗雖無刷痕，但日後做局部修補時，修補痕跡會比刷漆的方式更明顯。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 油漆色差</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">現場的油漆塗料，完工後都會保留剩料，以作日後修補用；但即使同批同色的油漆，牆壁上的漆色經過的一段時間後，再做局部修補時仍可看出色差（顏色越深的油漆越明顯），此為無法避免之狀況。如若甲方於完工後有修補之需要、希望完全無色差，則須改整面牆壁重新刷塗，施作之工資及費用另報。若有特殊漆色，乙方設計前期用色票與甲方溝通，由甲方確認後再施作；現場實際塗刷後若甲方認為與期待顏色不符，改色仍需另計費用。既有門面改色，若底面有含水氣，乙方盡告知並且提供改善方案，甲方不同意施作，未來如有龜裂，乙方均不負任何賠償責任。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:600; text-align:center; background:#FAFAFA;">面材釋疑</td>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 面材紋路</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">挑選材質時，乙方會提供材質大樣或圖片給客戶，使甲方能看出整片材質紋理，並理解完工後面材「全貌」，以避免甲方因「材質與自己期待不符」等理由，要求更換或減價。所有面材之自然紋路，可能會有「瑕疵」，如：陰陽色、石材裂紋、木材木結等。人造材質如系統板、木地板、POLY板、美耐板等，亦會有此狀況。此「瑕疵」乃因板材商依實際建材之自然紋路為依據，製作出仿自然材質之天然紋理，於各國文化中皆屬於自然的部分，歐美品牌的建材上亦屬常見狀況，因此材質紋理並不屬於「瑕疵」保固範圍。</td>
+                      </tr>
+                      <tr>
+                        <td rowspan="2" style="border:1px solid #111; padding:7px 6px; font-weight:600; text-align:center; background:#FAFAFA;">環保建材</td>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 低甲醛材料</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">施工標配為台製集成角材及夾板皆採用F3等級（經濟部標準檢驗局規定之板材甲醛含量）、E1系統板。上述之建材於完工驗收後，若甲方需乙方提供出廠證明及綠建材證明，酌收行政工本費$500/項。甲醛含量越低的板材，孵化長蟲的機率越高。甲方可要求用去甲醛噴霧或改為F1板材/E0系統板等甲醛含量更低的建材，甲醛在板材中低於一定的濃度，將會失去抑制蠹蟲卵孵化的毒性（板材不可能完全沒蟲卵），低甲醛含量的板材中暗藏的粉蠹蟲、木蠹蟲等蟲卵到夏天雨季便開始孵化（好發於四月到九月）。若客戶使用甲醛含量更低的建材，須自行承擔日後蟲害結果。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 甲醛材料味道</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">若甲方對於綠建材等級之甲醛味道感到極為不適，建議於裝修上盡量減少木作，改用其他替代建材替代（輕隔間，金屬鐵件等），油漆則改為竹炭漆，但裝修成本亦會提高。</td>
+                      </tr>
+                      <tr>
+                        <td rowspan="3" style="border:1px solid #111; padding:7px 6px; font-weight:600; text-align:center; background:#FAFAFA;">木作系統工程</td>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 木作天花結構</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">所有須固定於天花或牆面之吊燈、吊扇、電視等，皆須作木板或鐵件之結構補強後再封板。不可直接鎖於未補強之壁板上，若牆面為原建設之輕隔間或白磚上，也須補強或鎖固在結構骨料上。窗簾盒尺寸隨窗簾型式有所更改，須於乙方木作進場前定案。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 木作櫃體</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">門片五金為歐美或台製鉸鍊、抽屜滑軌為歐美或台製緩衝滑軌。抽屜拉開後尾端未貼皮屬正常，所有木櫃若以六面貼皮處理，費用另計。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:7px 6px; font-weight:500;"> 系統櫃體</td>
+                        <td style="border:1px solid #111; padding:7px 8px;">系統櫃體與原建設牆面相接處，可能會有大小縫，因原有牆壁不會完全垂直地面，櫃子無法跟著牆壁一起歪，自然會產生縫隙。乙方使用系統櫥櫃板材的甲醛釋出量與吸水厚度膨脹率，皆通過國家標準 CNS2215認證，系統櫃板材為短纖木粒材質，用於層板時，會因寬度或承重而自然彎曲，但不影響結構，屬正常現象。板材塑料封邊，因環境受光線（紫外線）照射影響，可能產生些微變色，屬正常狀況。</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="a4-page-footer">— 第 3 頁，共 4 頁 —</div>
+              </div>
+            </div>
+
+            <!-- ================= 第四頁：乙方聲明與承諾事項 (Part 3) ================= -->
+            <div class="a4-sheet" style="height:auto; min-height:1123px; margin-bottom:36px;">
+              <div class="a4-body-page" style="padding:40px 46px; justify-content:space-between;">
+                <div>
+                  <h3 style="font-family:'Noto Serif TC', serif; text-align:center; font-size:1.35rem; letter-spacing:3px; margin-bottom:16px; border-bottom:1.5px solid #111; padding-bottom:8px;">乙方聲明與承諾事項 (續完)</h3>
+                  <table class="a4-table" style="font-size:0.77rem; line-height:1.6; border-collapse:collapse; width:100%;">
+                    <thead>
+                      <tr style="background:#F2F2F2;">
+                        <th style="border:1px solid #111; padding:7px 6px; width:15%; text-align:center;">項目</th>
+                        <th style="border:1px solid #111; padding:7px 6px; width:20%; text-align:center;">問題</th>
+                        <th style="border:1px solid #111; padding:7px 8px; text-align:center;">說明</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">石材工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 石材養護</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">石材（如大理石、人造石等）具有毛孔特性，須避免有色液體（如咖啡、茶……）長時間殘留，以免滲透吸附而產生染色現象，也應避免與硬物摩擦產生刮痕。人造石、石英石檯面應避面撞擊或高溫鍋具直接接觸，以免產生裂痕。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">消防工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 消防設備</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">原建設樓板之所有設備出線（灑水頭、偵煙器、探測器等）皆須延伸至新作天花或做維修口，不可封閉於天花內。原安裝於樓板之止水閥須做維修孔，以便日後維修勘查使用。不擅自更動原建設公司規劃的消防設備位置及數量。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">水電工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 水電材料</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">電路套管若有可能被擠壓時（如灌水泥砂漿），須採用硬管（如PVC硬管/CD硬管）。熱水管除了壓接處以外，全段為不鏽鋼被覆保溫熱水管。</td>
+                      </tr>
+                      <tr>
+                        <td rowspan="2" style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">泥作防水工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 貼磚工程</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">浴室磁磚鋪設完畢靜置乾透後，須再試水，確認浴室周圍房間靠近地板的牆面有沒有滲水問題。磁磚填縫劑（詳6331承諾）。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 防水工程</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">防水彈泥塗料（詳6331承諾）。浴室防水（詳6331承諾）。防水層施作完成後須靜置，等打底跟防水都乾透，須試水12小時，確認浴室周圍房間靠近地板的牆面有沒有滲水問題。（以上試水時間，僅為建議，實際應依現場狀況調整）乙方壁面防水工程最少須塗佈與室內天花完成面高度同高。乙方提供浴室一年防漏保固。（詳6331承諾）。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">空調工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 空調工程</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">室外機放置位置須保持通風，不可貼牆，若甲方有堅持之不當安裝方式，經乙方告知風險後，後續之維修保固責任由甲方承擔。室內機須由空調廠商進行保護，以免粉塵滲入。新裝冷氣驗收時須測試運轉是否正常，一般建議讓空調運轉4小時以上。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">木地板工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 木地板異音</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">地板若直舖於原地面水平度不佳的環境，將因高低落差產生異音。經乙方告知後，若甲方仍堅持施工，日後若因異音有修繕之需求，得由甲方自行吸收修繕之費用。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">清潔工程</td>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:500;"> 社區公設清潔</td>
+                        <td style="border:1px solid #111; padding:8px 8px;">全室與公共區域之粉塵、保護措施殘膠須由乙方於完工退場時清除，施工期間若有額外之細清要求，由乙方與甲方協商清潔要求程度與費用。</td>
+                      </tr>
+                      <tr>
+                        <td style="border:1px solid #111; padding:8px 6px; font-weight:600; text-align:center; background:#FAFAFA;">備註</td>
+                        <td colspan="2" style="border:1px solid #111; padding:8px 8px; min-height:40px;"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- 雙方簽名欄位 -->
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:28px; padding-top:20px; border-top:1.5px solid #111111; font-size:0.92rem; line-height:1.9;">
+                    <div>
+                      <b>甲方簽名：</b>____________________<br>
+                      <b>身分證字號：</b>${p.clientId || '____________________'}<br>
+                      <b>日期：</b>中華民國 ${p.startROC.y} 年 月 日
+                    </div>
+                    <div>
+                      <b>乙方簽名：</b>暮川設計有限公司<br>
+                      <b>負責人：</b>鄭翔壕 (簽章)<br>
+                      <b>日期：</b>中華民國 ${p.startROC.y} 年 月 日
+                    </div>
                   </div>
                 </div>
-                <div class="a4-page-footer">— 第 2 頁，共 2 頁 —</div>
+                <div class="a4-page-footer">— 第 4 頁，共 4 頁 —</div>
               </div>
             </div>
           `;
