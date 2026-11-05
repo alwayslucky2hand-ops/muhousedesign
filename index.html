@@ -2631,7 +2631,7 @@
         const boxEl = document.getElementById(boxId);
         const label = type === 'summary' ? '專案總結' : '防禦與注意';
 
-        Toast.show(`⏳ AI 正在根據逐字稿與注記生成${label}...`, 'info');
+        Toast.show(`AI 正在根據逐字稿與注記生成${label}...`, 'info');
 
         try {
           const res = await ApiQueue.sendRequest('generateProjectAnalysis', {
@@ -2641,7 +2641,7 @@
 
           if (res && res.resultText) {
             if (boxEl) boxEl.value = res.resultText;
-            Toast.show(`✨ ${label}生成完畢，已同步寫入試算表！`);
+            Toast.show(`${label}生成完畢，已同步寫入試算表！`);
           } else {
             Toast.show('AI 未返回有效內容', 'error');
           }
@@ -2828,7 +2828,7 @@
           const activeIdx = this.currentChunkIndex - 1;
           const startStr = this.formatMinSec(this.currentSliceStartSec);
           const nextBoundaryStr = this.formatMinSec(this.currentSliceStartSec + 30);
-          statusEl.textContent = `🎙️ 背景錄製中【第 ${activeIdx} 片段】(${startStr}～${nextBoundaryStr})`;
+          statusEl.textContent = `背景錄製中【第 ${activeIdx} 片段】(${startStr}～${nextBoundaryStr})`;
         }
 
         // 精確每 30 秒自動切換一次錄音機
@@ -2911,7 +2911,7 @@
             chunkRecord.driveUrl = res.url;
             chunkRecord.isStored = true;
             await AudioIDB.updateChunk(chunkRecord);
-            Toast.show(`📁【第 ${chunkRecord.chunkIndex} 片段】(${chunkRecord.startTimeStr}～${chunkRecord.endTimeStr}) 已自動建檔至雲端`);
+            Toast.show(`【第 ${chunkRecord.chunkIndex} 片段】(${chunkRecord.startTimeStr}～${chunkRecord.endTimeStr}) 已自動建檔至雲端`);
           }
         } catch (e) {
           console.warn('雲端建檔待機重試，切片安全保留在本地 DB', e);
@@ -2958,7 +2958,7 @@
 
           const statusEl = document.getElementById('audio-slice-status');
           if (statusEl) {
-            statusEl.textContent = `🎙️ 正在錄製【第 ${this.currentChunkIndex - 1} 片段】(00分00秒～00分30秒)...`;
+            statusEl.textContent = `正在錄製【第 ${this.currentChunkIndex - 1} 片段】(00分00秒～00分30秒)...`;
           }
 
           // 2. 啟動 Web Worker 定時器（不受瀏覽器背景休眠降速限制）
@@ -2991,7 +2991,7 @@
         document.getElementById('btn-stop').disabled = true;
 
         const statusEl = document.getElementById('audio-slice-status');
-        if (statusEl) statusEl.textContent = '⏹️ 錄音已結束。音檔已完成建檔，請點擊「AI 解析逐字稿」執行解析';
+        if (statusEl) statusEl.textContent = '錄音已結束。音檔已完成建檔，請點擊「AI 解析逐字稿」執行解析';
         Toast.show('錄音已結束，音檔已存檔完成！請點擊「AI 解析逐字稿」');
       },
 
@@ -3025,10 +3025,10 @@
             const timeRange = `${item.startTimeStr}～${item.endTimeStr}`;
 
             if (btnTranscribe) {
-              btnTranscribe.innerHTML = `⏳ 正在解析第 ${i + 1} / ${pendingChunks.length} 個切片...`;
+              btnTranscribe.innerHTML = `正在解析第 ${i + 1} / ${pendingChunks.length} 個切片...`;
             }
             if (statusEl) {
-              statusEl.textContent = `⏳ 正在一個一個解析【第 ${sliceIdx} 片段】(${timeRange})...`;
+              statusEl.textContent = `正在解析【第 ${sliceIdx} 片段】(${timeRange})...`;
             }
 
             // 轉成 Base64
@@ -3056,11 +3056,11 @@
             // 標記該切片已解析
             item.isTranscribed = true;
             await AudioIDB.updateChunk(item);
-            Toast.show(`✅【第 ${sliceIdx} 片段】(${timeRange}) 解析完成並已寫入欄位！`);
+            Toast.show(`【第 ${sliceIdx} 片段】(${timeRange}) 解析完成並已寫入欄位！`);
           }
 
-          if (statusEl) statusEl.textContent = '🎉 所有 30 秒音訊切片已全數完成 AI 解析與試算表同步！';
-          Toast.show('✨ 所有音訊切片已全數解析完畢！');
+          if (statusEl) statusEl.textContent = '所有音訊切片已全數完成 AI 解析與試算表同步！';
+          Toast.show('所有音訊切片已全數解析完畢！');
         } catch (err) {
           Toast.show('解析過程發生錯誤: ' + err.message, 'error');
         } finally {
