@@ -1514,31 +1514,27 @@
         if (!files || files.length === 0) return;
         const record = StateStore.state.interviewRecords[idx];
         
-        Toast.show(`選材檔案列隊上傳中 (共 ${files.length} 份)...`, 'info');
-        const readFileAsync = (file) => new Promise(res => {
+        Toast.show('雲端列隊建檔與預覽中...', 'info');
+        const readImage = (file) => new Promise(res => {
           const reader = new FileReader();
-          reader.onload = e => res({ 
-            base64: e.target.result, 
-            type: file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'), 
-            name: file.name 
-          });
+          reader.onload = e => res({ base64: e.target.result, type: file.type || 'image/jpeg', name: file.name });
           reader.readAsDataURL(file);
         });
         
         for (let i = 0; i < files.length; i++) {
-          const fileData = await readFileAsync(files[i]);
+          const fileData = await readImage(files[i]);
           record.images.push(fileData.base64);
-          if (record.images.length > 0 && (record.currentImageIdx === undefined || isNaN(record.currentImageIdx))) {
-            record.currentImageIdx = 0;
-          }
+          if (record.images.length > 0 && record.currentImageIdx === undefined) record.currentImageIdx = 0;
+          
           
           this.renderRecordsList();
+          
           
           
           await this.uploadImageSilently(idx, record.images.length - 1, fileData);
         }
         
-        input.value = '';
+        input.value = ''; 
       },
 
       async uploadImageSilently(recordIdx, imgIdx, fileData) {
@@ -1556,14 +1552,15 @@
             fileName: fileData.name
           });
           if (res && res.url) {
+            
             if (record.images && record.images[imgIdx]) {
               record.images[imgIdx] = res.url;
+              
               this.silentSaveRecord(recordIdx);
-              this.renderRecordsList();
             }
           }
         } catch (err) {
-          console.warn('背景檔案上傳失敗，保留本地暫存', err);
+          console.warn('背景圖檔上傳失敗，保留 Base64', err);
         }
       },
 
@@ -1580,7 +1577,7 @@
         if (record.currentImageIdx >= record.images.length) record.currentImageIdx = Math.max(0, record.images.length - 1);
         this.renderRecordsList();
         this.manualSaveRecord(idx);
-        Toast.show('檔案已移除');
+        Toast.show('圖片已移除');
       },
 
       async silentSaveRecord(idx) {
@@ -1589,7 +1586,7 @@
         if(!projectId || !record) return;
         
         
-        if (record.images.some(img => img.startsWith('data:'))) return;
+        if (record.images.some(img => img.startsWith('data:image'))) return;
         
         try {
           const res = await ApiQueue.sendRequest('saveInterviewRecordsData', { projectId: projectId, record: record });
@@ -1602,9 +1599,10 @@
         if(!projectId) return Toast.show('請先選擇專案', 'error');
         
         const record = StateStore.state.interviewRecords[idx];
-        const hasBase64 = record.images.some(img => img.startsWith('data:'));
+        
+        const hasBase64 = record.images.some(img => img.startsWith('data:image'));
         if (hasBase64) {
-          return Toast.show('檔案尚在背景上傳至雲端，請稍候再儲存', 'warning');
+          return Toast.show('圖檔尚在背景上傳至雲端，請稍候再儲存', 'warning');
         }
 
         Toast.show('儲存中...', 'info');
@@ -1618,6 +1616,8 @@
       carouselGo(idx, dir) {
         const record = StateStore.state.interviewRecords[idx];
         if (!record.images || record.images.length <= 1) return;
+        
+        
         
         if (typeof record.currentImageIdx !== 'number' || isNaN(record.currentImageIdx)) {
           record.currentImageIdx = 0;
@@ -1636,7 +1636,7 @@
 
       async analyzeImages(idx) {
         const record = StateStore.state.interviewRecords[idx];
-        if(!record.images || record.images.length === 0) return Toast.show('請先上傳圖片或 PDF 文件', 'error');
+        if(!record.images || record.images.length === 0) return Toast.show('請先上傳圖片', 'error');
         
         const totalImages = record.images.length;
         const btn = document.getElementById(`btn-analyze-${idx}`);
@@ -1661,7 +1661,7 @@
 
           const updateImgBtn = () => {
             const liveBtn = document.getElementById(`btn-analyze-${idx}`) || btn;
-            if (liveBtn) liveBtn.innerHTML = `⏳ 深度解析中：第 ${i + 1} / ${totalImages} 份 (多頁 OCR + 市場解說) (${currentPct}%)`;
+            if (liveBtn) liveBtn.innerHTML = `⏳ 解析中：第 ${i + 1} / ${totalImages} 張 (${currentPct}%)`;
           };
           updateImgBtn();
 
@@ -1677,19 +1677,12 @@
           try {
             const imgData = record.images[i];
             let fileId = ''; let base64Str = '';
-            let mimeType = 'image/jpeg';
             
             if (imgData.startsWith('http')) {
               const match = imgData.match(/\/d\/([a-zA-Z0-9_-]+)/) || imgData.match(/id=([a-zA-Z0-9_-]+)/);
               if(match) fileId = match[1];
-              if (imgData.toLowerCase().includes('.pdf') || (imgData.includes('/file/d/') && !imgData.includes('thumbnail'))) {
-                mimeType = 'application/pdf';
-              }
             } else if (imgData.includes(',')) {
-              const parts = imgData.split(',');
-              base64Str = parts[1];
-              const mimeMatch = parts[0].match(/:(.*?);/);
-              if (mimeMatch) mimeType = mimeMatch[1];
+              base64Str = imgData.split(',')[1];
             } else {
               base64Str = imgData;
             }
@@ -1698,16 +1691,12 @@
               projectId: StateStore.get('activeProject'), 
               fileId: fileId,
               fileBase64: base64Str, 
-              mimeType: mimeType
+              mimeType: 'image/jpeg'
             });
             
             if(res) {
-              const isPdfDoc = mimeType === 'application/pdf';
-              const fileTitle = isPdfDoc ? `第 ${i + 1} 份 PDF 文件多頁深度解析` : `第 ${i + 1} 張圖深度解析`;
-              const proTitle = isPdfDoc ? `第 ${i + 1} 份 PDF 設計師市場語言解說` : `第 ${i + 1} 張圖設計師市場語言解說`;
-
-              allDescriptions += `【${fileTitle}】\n${res.description || '特徵提取完成。'}\n\n`;
-              allProExplanations += `【${proTitle}】\n${res.proExplanation || '無特殊建議。'}\n\n`;
+              allDescriptions += `【第 ${i + 1} 張圖解析】\n${res.description || '特徵提取完成。'}\n\n`;
+              allProExplanations += `【第 ${i + 1} 張圖市場解說】\n${res.proExplanation || '無特殊建議。'}\n\n`;
               
               record.description = allDescriptions.trim();
               record.proExplanation = allProExplanations.trim();
@@ -1718,7 +1707,7 @@
               if (!descBox && !proBox) this.renderRecordsList();
             }
           } catch(err) { 
-            Toast.show(`第 ${i + 1} 份檔案解析失敗: ` + err.message, 'error'); 
+            Toast.show(`第 ${i + 1} 張解析失敗: ` + err.message, 'error'); 
             console.error(err); 
           } finally {
             if (imgTimer) { clearInterval(imgTimer); imgTimer = null; }
@@ -1727,6 +1716,7 @@
 
         const doneImgBtn = document.getElementById(`btn-analyze-${idx}`) || btn;
         if (doneImgBtn) doneImgBtn.innerHTML = `✅ 解析完成 (100%)，請點擊提取選材`;
+        
         
         await this.manualSaveRecord(idx);
 
@@ -1756,7 +1746,7 @@
           targetBtn.disabled = true;
           targetBtn.innerHTML = `⏳ AI 提取與建檔中 (0/1)...`;
         } else {
-          Toast.show('AI 根據多頁解析內容提取選材中...', 'info');
+          Toast.show('AI 根據解析內容提取選材中...', 'info');
         }
 
         try {
@@ -1773,14 +1763,16 @@
           if (res && res.suggestedMaterials && Array.isArray(res.suggestedMaterials) && res.suggestedMaterials.length > 0) {
             if (!Array.isArray(record.materials)) record.materials = [];
             
+            
             const validMaterials = res.suggestedMaterials.filter(m => m && m.name);
             record.materials = record.materials.concat(validMaterials);
             
             this.selectRecord(idx); 
             this.renderMaterialsTable();
+            
             await this.silentSaveRecord(idx); 
             
-            Toast.show('✨ AI 智能選材已成功自多頁文件中提取並同步至試算表！', 'info');
+            Toast.show('✨ AI 智能選材已成功提取並同步至試算表！', 'info');
           } else {
             Toast.show('AI 辨識出的材料格式有誤，已載入空白列。', 'warning');
             this.addEmptyMaterial();
@@ -1796,6 +1788,8 @@
           }
         }
       },
+
+      
 
       addEmptyMaterial() {
         const records = StateStore.get('interviewRecords');
@@ -1829,40 +1823,22 @@
           const imgs = r.images || [];
           const cIdx = r.currentImageIdx || 0;
           
-          let carouselHtml = `<div style="color:var(--text-muted); font-size:0.9rem;">尚未上傳圖檔或 PDF</div>`;
+          let carouselHtml = `<div style="color:var(--text-muted); font-size:0.9rem;">尚未上傳圖檔</div>`;
           if (imgs.length > 0) {
-            let displaySrc = imgs[cIdx] || '';
-            const isPdf = displaySrc.includes('application/pdf') || displaySrc.toLowerCase().includes('.pdf') || (displaySrc.includes('/file/d/') && !displaySrc.includes('thumbnail'));
             
-            if (displaySrc && displaySrc.includes('drive.google.com/file/d/') && !isPdf) {
+            let displaySrc = imgs[cIdx];
+            if (displaySrc && displaySrc.includes('drive.google.com/file/d/')) {
               const oldMatch = displaySrc.match(/\/d\/([a-zA-Z0-9_-]+)/);
-              if (oldMatch) displaySrc = 'https:
+              if (oldMatch) displaySrc = 'https://drive.google.com/thumbnail?id=' + oldMatch[1] + '&sz=w1000';
             }
             
-            let previewMedia = '';
-            if (isPdf) {
-              previewMedia = `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 16px; text-align:center; min-height:240px; width:100%; user-select:none;">
-                  <div style="width:60px; height:60px; border:1px solid var(--line-dark); display:flex; align-items:center; justify-content:center; margin-bottom:12px; background:#FFFFFF;">
-                    <i data-lucide="file-text" style="width:30px; height:30px; color:var(--text-primary);"></i>
-                  </div>
-                  <div style="font-weight:600; font-size:0.95rem; color:var(--text-primary); margin-bottom:4px;">PDF 圖說 / 企劃文件</div>
-                  <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">已載入檔案，支援多頁 OCR 與市場語言解析</div>
-                  ${displaySrc.startsWith('http') ? `<a href="${displaySrc}" target="_blank" rel="noopener noreferrer" style="font-size:0.82rem; color:var(--text-primary); text-decoration:underline; font-weight:600;">在新分頁開啟完整 PDF 檔案</a>` : '<span style="font-size:0.75rem; color:#888;">(雲端背景上傳同步中...)</span>'}
-                </div>
-              `;
-            } else {
-              previewMedia = `<img src="${displaySrc}" class="carousel-img active" alt="設計參考圖">`;
-            }
-
             carouselHtml = `
               <button class="carousel-btn left" onclick="DesignManager.carouselGo(${i}, -1)"><i data-lucide="chevron-left"></i></button>
-              ${previewMedia}
+              <img src="${displaySrc}" class="carousel-img active">
               <button class="carousel-btn right" onclick="DesignManager.carouselGo(${i}, 1)"><i data-lucide="chevron-right"></i></button>
-              <button onclick="UIConfirm.bind(this, '移除?', () => DesignManager.deleteImage(${i}))" style="position:absolute; top:12px; right:12px; background:#FFF; border:1px solid var(--line-light); width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="刪除檔案">
+              <button onclick="UIConfirm.bind(this, '移除?', () => DesignManager.deleteImage(${i}))" style="position:absolute; top:12px; right:12px; background:#FFF; border:none; width:36px; height:36px; cursor:pointer;" title="刪除圖檔">
                 <i data-lucide="x" style="width:16px;"></i>
               </button>
-              <div style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-size:0.75rem; background:rgba(255,255,255,0.9); padding:2px 8px; border:1px solid var(--line-light); color:#333; font-family:'Inter', sans-serif;">${cIdx + 1} / ${imgs.length}</div>
             `;
           }
 
@@ -1882,23 +1858,23 @@
                 </div>
                 
                 <div style="display:flex; justify-content:space-between; margin:20px 0 10px 0; align-items:center;">
-                  <label class="input-field-label">視覺參考圖 / PDF 文件</label>
-                  <button class="btn btn-icon-only" style="min-height:30px;" onclick="document.getElementById('upload-img-${i}').click()" title="上傳圖片或PDF"><i data-lucide="upload"></i></button>
-                  <input type="file" id="upload-img-${i}" multiple accept="image/*,application/pdf" style="display:none;" onchange="DesignManager.handleImageUpload(this, ${i})">
+                  <label class="input-field-label">視覺參考圖</label>
+                  <button class="btn btn-icon-only" style="min-height:30px;" onclick="document.getElementById('upload-img-${i}').click()" title="上傳圖檔"><i data-lucide="upload"></i></button>
+                  <input type="file" id="upload-img-${i}" multiple accept="image/*" style="display:none;" onchange="DesignManager.handleImageUpload(this, ${i})">
                 </div>
                 <div class="carousel-container">${carouselHtml}</div>
 
-                <button id="btn-analyze-${i}" class="btn btn-icon-only" style="width:100%; margin-bottom:20px;" onclick="DesignManager.analyzeImages(${i})" title="AI 多頁 OCR 與市場語言解析">
+                <button id="btn-analyze-${i}" class="btn btn-icon-only" style="width:100%; margin-bottom:20px;" onclick="DesignManager.analyzeImages(${i})" title="AI 視覺解析">
                   <i data-lucide="sparkles"></i>
                 </button>
                 
                 <div class="input-field-group">
-                  <label class="input-field-label">畫面描述與文字內容 (逐頁多頁 OCR)</label>
-                  <textarea id="desc-${i}" class="spec-input" style="min-height:160px; line-height:1.7;" placeholder="AI 解析後將在此產出每一頁的圖面文字(OCR)與畫面特徵..." onblur="DesignManager.updateField(${i},'description',this.value)">${r.description}</textarea>
+                  <label class="input-field-label">畫面描述</label>
+                  <textarea id="desc-${i}" class="spec-input" onblur="DesignManager.updateField(${i},'description',this.value)">${r.description}</textarea>
                 </div>
                 <div class="input-field-group">
-                  <label class="input-field-label">設計師市場語言解說 (客戶視角溝通)</label>
-                  <textarea id="pro-${i}" class="spec-input" style="min-height:160px; line-height:1.7;" placeholder="AI 解析後將在此產出站在屋主立場的設計原因、生活痛點解法與預算選材說明..." onblur="DesignManager.updateField(${i},'proExplanation',this.value)">${r.proExplanation}</textarea>
+                  <label class="input-field-label">專業建議</label>
+                  <textarea id="pro-${i}" class="spec-input" onblur="DesignManager.updateField(${i},'proExplanation',this.value)">${r.proExplanation}</textarea>
                 </div>
 
                 <div style="display:flex; gap:12px; margin-top:24px;">
@@ -2020,7 +1996,7 @@
         const urls = this.getBlueprintList(record);
         let baseText = String(record.inquiryText || '');
 
-        // 清除舊版或既有尾端的施工圖描述與網址區塊，避免重複堆疊
+        
         baseText = baseText
           .replace(/\n*(施工圖檔案|施工藍圖下載連結)[：:]\s*(\n+https?:\/\/[^\s]+)+/g, '')
           .trim();
