@@ -1191,17 +1191,16 @@
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
               <div>
                 <span class="input-field-label" style="margin-right:4px;">折讓</span>
-                <input type="number" id="profit-input-discount" class="spec-input" value="0" style="width:90px; display:inline-block; min-height:34px;" oninput="ProfitManager.renderPreview()">
+                <input type="number" id="profit-input-discount" class="spec-input" value="0" style="width:90px; display:inline-block; min-height:34px;" oninput="ProfitManager.onParamChange(false)" onblur="ProfitManager.onParamChange(true)">
               </div>
               <div>
                 <span class="input-field-label" style="margin-right:4px;">管理費%</span>
-                <input type="number" id="profit-input-fee" class="spec-input" value="8" style="width:64px; display:inline-block; min-height:34px;" oninput="ProfitManager.renderPreview()">
+                <input type="number" id="profit-input-fee" class="spec-input" value="8" style="width:64px; display:inline-block; min-height:34px;" oninput="ProfitManager.onParamChange(false)" onblur="ProfitManager.onParamChange(true)">
               </div>
               <label style="font-size:0.85rem; display:inline-flex; align-items:center; gap:4px; cursor:pointer; user-select:none;">
-                <input type="checkbox" id="profit-include-tax" checked onchange="ProfitManager.applyProfitRecalculation()"> 5% 營業稅
+                <input type="checkbox" id="profit-include-tax" checked onchange="ProfitManager.onParamChange(true)"> 5% 營業稅
               </label>
-              <button class="btn btn-primary btn-icon-only" onclick="ProfitManager.applyProfitRecalculation()" title="毛利精算"><i data-lucide="calculator"></i></button>
-              <button class="btn btn-icon-only" style="border-color:var(--line-dark);" onclick="ProfitManager.exportPDF()" title="匯出 PDF"><i data-lucide="download"></i></button>
+              <button class="btn btn-primary btn-icon-only" onclick="ProfitManager.exportPDF()" title="匯出 PDF"><i data-lucide="download"></i></button>
             </div>
           </div>
 
@@ -2699,7 +2698,9 @@
         if (!silent) Toast.show('儲存成本清單中...', 'info');
         try {
           await ApiQueue.sendRequest('saveContractorCosts', { projectId: pId, items: StateStore.state.contractorOcrItems });
-          SaveStatus.setSaved('成本清單已儲存');
+          ProfitManager.renderPreview();
+          await ProfitManager.syncProfitToSheet(true);
+          SaveStatus.setSaved('成本清單與毛利已同步');
           if (!silent) Toast.show('專案成本已成功寫入資料庫');
           return true;
         } catch (err) {
@@ -3901,12 +3902,10 @@
               dimUnit: 'cm',
               l: '', w: '', h: ''
             }));
-            // 嚴格保持左右不自動聯動：未點選「導入右側」前，右側清單維持空白並同步清空後端未導入項目
-            StateStore.state.quotationTableItems = [];
+            // 保留右側已儲存項目，僅刷新左側 AI 草稿供設計師審閱導入
             this.renderBlocks();
-            this.renderTable();
-            this.saveAll(true);
-            Toast.show('✨ AI 報價草稿已生成於左側！請展開確認後點擊「導入右側」加入總表。');
+            SaveStatus.setSaved('AI 報價草稿已就緒');
+            Toast.show('AI 報價草稿已生成於左側，確認後請點「導入右側」加入總表');
           }
         } catch (err) {
           Toast.show('AI 報價生成失敗: ' + err.message, 'error');
@@ -3918,16 +3917,26 @@
           }
         }
       },
-      saveAll(silent = false) {
+      async saveAll(silent = false) {
         const pId = StateStore.get('activeProject');
-        if (!pId) return;
+        if (!pId) {
+          if (!silent) Toast.show('請先選擇專案', 'error');
+          return false;
+        }
+        SaveStatus.setSaving('儲存報價總表中...', 65);
         if (!silent) Toast.show('儲存報價單中...', 'info');
-        ApiQueue.sendRequest('saveQuotationItems', { projectId: pId, items: StateStore.state.quotationTableItems || [] })
-          .then(() => {
-            if (!silent) Toast.show('報價單已同步儲存至試算表');
-            ProfitManager.renderPreview();
-          })
-          .catch(() => { if (!silent) Toast.show('儲存失敗', 'error'); });
+        try {
+          await ApiQueue.sendRequest('saveQuotationItems', { projectId: pId, items: StateStore.state.quotationTableItems || [] });
+          ProfitManager.renderPreview();
+          await ProfitManager.syncProfitToSheet(true);
+          SaveStatus.setSaved('報價單與毛利已同步');
+          if (!silent) Toast.show('報價單已同步儲存至試算表');
+          return true;
+        } catch (err) {
+          SaveStatus.setError('報價單儲存失敗');
+          if (!silent) Toast.show('儲存失敗', 'error');
+          return false;
+        }
       },
       renderBlocks() {
         const container = document.getElementById('quote-blocks-container');
@@ -4136,39 +4145,60 @@
         }
       },
 
-      applyProfitRecalculation() {
+      onParamChange(immediate = false) {
+        // 1. 零秒樂觀 UI 即時重算與連動法務頁
+        this.renderPreview();
+        // 2. 自動背景同步寫入 PROJECT_PROFIT 試算表
+        if (immediate) {
+          if (Debouncer.timers['save_profit']) {
+            clearTimeout(Debouncer.timers['save_profit']);
+            delete Debouncer.timers['save_profit'];
+          }
+          delete Debouncer.callbacks['save_profit'];
+          this.syncProfitToSheet(true);
+        } else {
+          Debouncer.run('save_profit', () => this.syncProfitToSheet(true), 700, '毛利精算');
+        }
+      },
+
+      async syncProfitToSheet(silent = true) {
         const pId = StateStore.get('activeProject');
-        if (!pId) return Toast.show('請先選擇專案', 'error');
-        const discount = Number(document.getElementById('profit-input-discount').value) || 0;
-        const fee = Number(document.getElementById('profit-input-fee').value) || 8;
+        if (!pId) return;
+        const discount = Number(document.getElementById('profit-input-discount')?.value) || 0;
+        const fee = Number(document.getElementById('profit-input-fee')?.value) || 8;
         const includeTaxEl = document.getElementById('profit-include-tax');
         const includeTax = includeTaxEl ? includeTaxEl.checked : true;
 
-        this.renderPreview();
-        Toast.show('正在精算毛利並同步更新試算表與法務合約...', 'info');
-        ApiQueue.sendRequest('recalculateQuotation', { projectId: pId, discount: discount, managementFeeRate: fee, includeTax: includeTax })
-          .then(res => {
-            if (!res) return;
+        SaveStatus.setSaving('同步毛利與法務數據...', 70);
+        try {
+          const res = await ApiQueue.sendRequest('recalculateQuotation', {
+            projectId: pId,
+            discount: discount,
+            managementFeeRate: fee,
+            includeTax: includeTax
+          });
+          if (res) {
             document.getElementById('val-total-cost').textContent = '$' + (res.totalCost || 0).toLocaleString();
             document.getElementById('val-quote-total').textContent = '$' + (res.quoteTotal || 0).toLocaleString();
             document.getElementById('val-margin-rate').textContent = res.grossMargin || '0%';
             document.getElementById('val-final-payable').textContent = '$' + (res.finalPayable || 0).toLocaleString();
-
             const profitAmtEl = document.getElementById('val-gross-profit-amt');
             if (profitAmtEl) profitAmtEl.textContent = '預估毛利：$' + (res.grossProfit || 0).toLocaleString();
-
-            const taxHintEl = document.getElementById('val-payable-tax-hint');
-            if (taxHintEl) taxHintEl.textContent = includeTax ? `含 ${fee}% 管理費及 5% 營業稅` : `含 ${fee}% 管理費 (未稅)`;
-
-            const hasManual = (StateStore.state.contractorOcrItems || []).some(i => i.isManualEstimate);
-            document.getElementById('warning-manual-cost').style.display = hasManual ? 'inline-block' : 'none';
-
             const legalOverride = document.getElementById('legal-constr-override');
             if (legalOverride) legalOverride.value = res.finalPayable || 0;
             LegalManager.renderA4Preview();
+          }
+          SaveStatus.setSaved('毛利與法務數據已自動同步');
+          if (!silent) Toast.show('毛利精算與試算表已同步');
+        } catch (err) {
+          SaveStatus.setError('毛利同步失敗');
+          if (!silent) Toast.show('精算同步失敗', 'error');
+        }
+      },
 
-            Toast.show('毛利精算完成，已同步更新法務承攬金額');
-          }).catch(() => Toast.show('精算失敗', 'error'));
+      applyProfitRecalculation() {
+        this.renderPreview();
+        this.syncProfitToSheet(true);
       },
 
       renderPreview() {
@@ -4225,6 +4255,13 @@
         document.getElementById('val-final-payable').textContent = '$' + activePayable.toLocaleString();
         const profitAmtEl = document.getElementById('val-gross-profit-amt');
         if (profitAmtEl) profitAmtEl.textContent = '預估毛利：$' + grossProfit.toLocaleString();
+        const taxHintEl = document.getElementById('val-payable-tax-hint');
+        if (taxHintEl) taxHintEl.textContent = includeTax ? `含 ${feeRate}% 管理費及 5% 營業稅` : `含 ${feeRate}% 管理費 (未稅)`;
+
+        // 零秒連動法務頁承攬總價與 A4 條款預覽
+        const legalOverride = document.getElementById('legal-constr-override');
+        if (legalOverride) legalOverride.value = activePayable;
+        if (typeof LegalManager !== 'undefined') LegalManager.renderA4Preview();
 
         const projName = document.getElementById('legal-project-name')?.value || StateStore.get('activeProject') || '尊貴客戶';
         const projAddr = document.getElementById('legal-project-address')?.value || '';
@@ -4474,27 +4511,36 @@
         `;
       },
 
-      exportPDF() {
+      async exportPDF() {
         const pId = StateStore.get('activeProject');
         if (!pId) return Toast.show('請先選擇專案', 'error');
         const discount = Number(document.getElementById('profit-input-discount')?.value) || 0;
         const fee = Number(document.getElementById('profit-input-fee')?.value) || 8;
         const includeTax = document.getElementById('profit-include-tax') ? document.getElementById('profit-include-tax').checked : true;
-        Toast.show('正式多頁估價單 PDF 雲端產製中...', 'info');
-        ApiQueue.sendRequest('generateQuotePdf', {
-          projectId: pId,
-          items: StateStore.state.quotationTableItems || [],
-          discount: discount,
-          managementFeeRate: fee,
-          includeTax: includeTax
-        })
-          .then(res => {
-            if (res && res.url) {
-              Toast.show('PDF 產製成功，即將開啟雲端連結');
-              setTimeout(() => window.open(res.url, '_blank'), 600);
-            }
-          })
-          .catch(() => Toast.show('PDF 產製失敗', 'error'));
+
+        try {
+          SaveStatus.setSaving('1/2 自動儲存最新報價與毛利...', 35);
+          Toast.show('正在自動儲存最新報價並產製 PDF...', 'info');
+          await Debouncer.flush('save_profit');
+          await QuoteManager.saveAll(true);
+
+          SaveStatus.setSaving('2/2 產製多頁估價單 PDF...', 80);
+          const res = await ApiQueue.sendRequest('generateQuotePdf', {
+            projectId: pId,
+            items: StateStore.state.quotationTableItems || [],
+            discount: discount,
+            managementFeeRate: fee,
+            includeTax: includeTax
+          });
+          if (res && res.url) {
+            SaveStatus.setSaved('報價已儲存並完成 PDF 匯出');
+            Toast.show('PDF 產製成功，即將開啟雲端連結');
+            setTimeout(() => window.open(res.url, '_blank'), 600);
+          }
+        } catch (err) {
+          SaveStatus.setError('PDF 匯出失敗');
+          Toast.show('PDF 產製失敗: ' + err.message, 'error');
+        }
       }
     };
 
@@ -5618,10 +5664,15 @@
         if (!pId) return Toast.show('請先選擇專案', 'error');
         const p = this.getParams();
 
-        Toast.show('Google Docs 變數引擎編譯中...', 'info');
+        SaveStatus.setSaving('1/2 自動儲存報價與毛利數據...', 30);
+        Toast.show('正在儲存最新數據並編譯三合一合約...', 'info');
         try {
+          await Debouncer.flush('save_profit');
+          await QuoteManager.saveAll(true);
+          SaveStatus.setSaving('2/2 產製合約 PDF 並寫入試算表...', 75);
           const res = await ApiQueue.sendRequest('generateContracts', p);
           if (res) {
+            SaveStatus.setSaved('三合一合約已儲存並產製完成');
             Toast.show('三合一合約與 PDF 產製完成！');
             const linksBox = document.getElementById('legal-export-links');
             if (linksBox) {
