@@ -593,13 +593,61 @@
       flex-shrink: 0;
       overflow: hidden;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      touch-action: pan-x pan-y pinch-zoom;
+    }
+    .preview-action-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 24px;
+      border-top: 1px solid var(--line-light);
+      background: #FFFFFF;
+    }
+    .preview-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .pdf-result-box {
+      display: none;
+      width: 100%;
+      max-width: 794px;
+      border: 1px solid var(--line-dark);
+      background: #FAFAFA;
+      padding: 10px 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .pdf-result-box.active {
+      display: flex;
+    }
+    .pdf-result-url {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.82rem;
+      font-family: 'Inter', sans-serif;
+      color: #111111;
+      text-decoration: underline;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     @media (max-width: 1023px) {
       .a4-viewport-container {
-        padding: 16px 8px;
-        gap: 16px;
-        overflow-x: hidden;
-        touch-action: pan-y pinch-zoom;
+        width: calc(100% + 28px);
+        margin-left: -14px;
+        margin-right: -14px;
+        padding: 12px 0;
+        gap: 12px;
+        overflow-x: auto;
+        touch-action: pan-x pan-y pinch-zoom;
+      }
+      .preview-action-bar {
+        padding: 16px 12px;
       }
     }
      
@@ -1446,7 +1494,6 @@
               <label style="font-size:0.85rem; display:inline-flex; align-items:center; gap:4px; cursor:pointer; user-select:none;">
                 <input type="checkbox" id="profit-include-tax" checked onchange="ProfitManager.onParamChange(true)"> 5% 營業稅
               </label>
-              <button class="btn btn-primary btn-icon-only" onclick="ProfitManager.exportPDF()" title="匯出 PDF"><i data-lucide="download"></i></button>
             </div>
           </div>
 
@@ -1471,6 +1518,19 @@
           <div id="quote-preview-container" class="a4-viewport-container">
             <div style="text-align:center; color:var(--text-muted); padding:60px;">尚未產生報價單</div>
           </div>
+
+          
+          <div class="preview-action-bar">
+            <div class="preview-action-row">
+              <button id="btn-profit-preview-all" class="btn btn-icon-only" style="border-color:var(--line-dark) !important;" onclick="ProfitManager.togglePreviewAll()" title="全部預覽（由上而下檢視所有頁面）">
+                <i data-lucide="layers"></i>
+              </button>
+              <button id="btn-profit-export-pdf" class="btn btn-primary btn-icon-only" style="display:none;" onclick="ProfitManager.exportPDF()" title="確認並輸出 PDF 存至雲端硬碟">
+                <i data-lucide="file-up"></i>
+              </button>
+            </div>
+            <div id="profit-pdf-result" class="pdf-result-box"></div>
+          </div>
         </div>
       </div>
 
@@ -1494,7 +1554,6 @@
                 
                 <button class="btn btn-icon-only" onclick="LegalManager.addStage()" title="增加一期"><i data-lucide="plus"></i></button>
                 <button class="btn btn-icon-only" onclick="LegalManager.removeStage()" title="減少一期"><i data-lucide="minus"></i></button>
-                <button class="btn btn-primary btn-icon-only" onclick="LegalManager.compileContracts()" title="編譯合約文件"><i data-lucide="file-check"></i></button>
               </div>
             </div>
 
@@ -1587,6 +1646,19 @@
             
             <div id="legal-preview-canvas" class="a4-viewport-container">
               
+            </div>
+
+            
+            <div class="preview-action-bar">
+              <div class="preview-action-row">
+                <button id="btn-legal-preview-all" class="btn btn-icon-only" style="border-color:var(--line-dark) !important;" onclick="LegalManager.togglePreviewAll()" title="全部預覽（由上而下檢視所有合約頁面）">
+                  <i data-lucide="layers"></i>
+                </button>
+                <button id="btn-legal-export-pdf" class="btn btn-primary btn-icon-only" style="display:none;" onclick="LegalManager.exportAllPreviewPdf()" title="確認並輸出完整合約 PDF 存至雲端硬碟">
+                  <i data-lucide="file-up"></i>
+                </button>
+              </div>
+              <div id="legal-pdf-result" class="pdf-result-box"></div>
             </div>
           </div>
           
@@ -2111,13 +2183,124 @@
 
     const RedrawIcons = () => { if(window.lucide) lucide.createIcons({ strokeWidth: 1.2 }); };
 
+    const CopyHelper = {
+      async copy(text, btn) {
+        if (!text) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+          }
+          if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i>';
+            RedrawIcons();
+            setTimeout(() => { btn.innerHTML = orig; RedrawIcons(); }, 1800);
+          }
+          Toast.show('已複製雲端 PDF 網址');
+        } catch (e) {
+          Toast.show('複製失敗，請手動選取網址', 'error');
+        }
+      },
+      renderResultBox(boxId, url) {
+        const box = document.getElementById(boxId);
+        if (!box) return;
+        if (!url) {
+          box.classList.remove('active');
+          box.innerHTML = '';
+          return;
+        }
+        const safeUrl = AudioManager.escapeHtml(url);
+        box.classList.add('active');
+        box.innerHTML = `
+          <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="pdf-result-url" title="點擊前往觀看 PDF">${safeUrl}</a>
+          <div style="display:flex; gap:8px; flex-shrink:0;">
+            <button type="button" class="btn btn-icon-only" style="min-height:34px;" onclick="CopyHelper.copy('${safeUrl}', this)" title="複製 PDF 網址"><i data-lucide="copy" style="width:16px;height:16px;"></i></button>
+            <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-icon-only" style="min-height:34px; text-decoration:none;" title="前往觀看 PDF"><i data-lucide="external-link" style="width:16px;height:16px;"></i></a>
+          </div>
+        `;
+        RedrawIcons();
+      }
+    };
+
+    const BtnProgress = {
+      start(btn, totalPages = 1) {
+        if (!btn) return { set() {}, done() {}, stop() {} };
+        const origHtml = btn.innerHTML;
+        const total = Math.max(1, Number(totalPages) || 1);
+        const calcPct = (pageIdx) => Math.min(100, Math.max(1, Math.round((pageIdx / total) * 100)));
+        let currentStep = 1;
+        let pct = total > 1 ? calcPct(1) : 10;
+        let finished = false;
+        btn.disabled = true;
+
+        const render = () => {
+          btn.innerHTML = `<span style="font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;letter-spacing:0.5px;">${pct}%</span>`;
+        };
+        render();
+
+        const intervalMs = Math.max(220, Math.min(600, Math.round(6000 / total)));
+        const timer = setInterval(() => {
+          if (finished) return;
+          if (total > 1 && currentStep < total - 1) {
+            currentStep++;
+            pct = calcPct(currentStep);
+            render();
+          } else if (total === 1 && pct < 90) {
+            pct = Math.min(90, pct + 10);
+            render();
+          }
+        }, intervalMs);
+
+        return {
+          set(nextPct) {
+            if (finished) return;
+            if (total > 1) {
+              const targetStep = Math.min(total - 1, Math.max(currentStep, Math.round((nextPct / 100) * total)));
+              currentStep = targetStep;
+              pct = calcPct(currentStep);
+            } else {
+              pct = Math.max(pct, Math.min(95, Math.round(nextPct)));
+            }
+            render();
+          },
+          done() {
+            finished = true;
+            clearInterval(timer);
+            pct = 100;
+            render();
+            setTimeout(() => {
+              btn.disabled = false;
+              btn.innerHTML = origHtml;
+              RedrawIcons();
+            }, 700);
+          },
+          stop() {
+            finished = true;
+            clearInterval(timer);
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            RedrawIcons();
+          }
+        };
+      }
+    };
+
     const A4Scaler = {
       fitContainer(container) {
         if (!container) return;
         const sheets = container.querySelectorAll('.a4-sheet');
         if (sheets.length === 0) return;
-        const pad = window.innerWidth < 1024 ? 16 : 32;
-        const availW = container.clientWidth > 0 ? (container.clientWidth - pad) : (window.innerWidth - pad - 28);
+        const isMobile = window.innerWidth < 1024;
+        const pad = isMobile ? 0 : 32;
+        const availW = container.clientWidth > 0 ? (container.clientWidth - pad) : (window.innerWidth - pad);
         const scale = Math.min(1, Math.max(0.25, availW / 794));
 
         sheets.forEach(sheet => {
@@ -5215,6 +5398,19 @@
 
       currentPageIdx: 0,
       allPages: [],
+      isPreviewAll: false,
+
+      togglePreviewAll() {
+        if (!this.allPages || this.allPages.length === 0) {
+          return Toast.show('目前無報價預覽頁面', 'info');
+        }
+        this.isPreviewAll = !this.isPreviewAll;
+        this.showCurrentPage();
+        const container = document.getElementById('quote-preview-container');
+        if (this.isPreviewAll && container) {
+          container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      },
 
       getTradeTerms(cat) {
         if (this.tradeTerms[cat]) return this.tradeTerms[cat];
@@ -5243,6 +5439,7 @@
       },
 
       switchSheetTab(tabKey) {
+        this.isPreviewAll = false;
         const foundPageIdx = this.allPages.findIndex(p => p.tabKey === tabKey);
         if (foundPageIdx !== -1) {
           this.currentPageIdx = foundPageIdx;
@@ -5254,26 +5451,34 @@
         const container = document.getElementById('quote-preview-container');
         const tabsNav = document.getElementById('profit-sheet-tabs-nav');
         const indicator = document.getElementById('profit-page-indicator');
+        const btnPreviewAll = document.getElementById('btn-profit-preview-all');
+        const btnExport = document.getElementById('btn-profit-export-pdf');
         if (!container || this.allPages.length === 0) return;
 
         if (this.currentPageIdx >= this.allPages.length) this.currentPageIdx = 0;
         if (this.currentPageIdx < 0) this.currentPageIdx = 0;
 
-        const page = this.allPages[this.currentPageIdx];
-        const activeTabKey = page.tabKey;
-        const tabPages = [];
-        this.allPages.forEach((p, idx) => {
-          if (p.tabKey === activeTabKey) tabPages.push({ page: p, globalIdx: idx });
-        });
         const totalPages = this.allPages.length;
-        const firstGlobal = tabPages[0].globalIdx + 1;
-        const lastGlobal = tabPages[tabPages.length - 1].globalIdx + 1;
-        const rangeLabel = tabPages.length > 1
-          ? `${firstGlobal}–${lastGlobal} / ${totalPages} 頁（${page.tabTitle}｜共 ${tabPages.length} 頁）`
-          : `${firstGlobal} / ${totalPages} 頁（${page.tabTitle}）`;
+        const page = this.allPages[this.currentPageIdx];
+        const activeTabKey = this.isPreviewAll ? '__ALL__' : page.tabKey;
+
+        const renderList = this.isPreviewAll
+          ? this.allPages.map((p, idx) => ({ page: p, globalIdx: idx }))
+          : this.allPages.reduce((acc, p, idx) => {
+              if (p.tabKey === activeTabKey) acc.push({ page: p, globalIdx: idx });
+              return acc;
+            }, []);
 
         if (indicator) {
-          indicator.textContent = rangeLabel;
+          if (this.isPreviewAll) {
+            indicator.textContent = `全部預覽（共 ${totalPages} 頁）`;
+          } else {
+            const firstGlobal = renderList[0].globalIdx + 1;
+            const lastGlobal = renderList[renderList.length - 1].globalIdx + 1;
+            indicator.textContent = renderList.length > 1
+              ? `${firstGlobal}–${lastGlobal} / ${totalPages} 頁（${page.tabTitle}｜共 ${renderList.length} 頁）`
+              : `${firstGlobal} / ${totalPages} 頁（${page.tabTitle}）`;
+          }
         }
         if (tabsNav) {
           tabsNav.innerHTML = this.pageKeys.map((k, idx) => `
@@ -5282,7 +5487,15 @@
             </button>
           `).join('');
         }
-        container.innerHTML = tabPages.map(({ page: tp, globalIdx }) => `
+        if (btnPreviewAll) {
+          btnPreviewAll.classList.toggle('btn-primary', this.isPreviewAll);
+          btnPreviewAll.innerHTML = `<i data-lucide="${this.isPreviewAll ? 'minimize-2' : 'layers'}"></i>`;
+          btnPreviewAll.title = this.isPreviewAll ? '返回單頁籤預覽' : '全部預覽（由上而下檢視所有頁面）';
+        }
+        if (btnExport) {
+          btnExport.style.display = this.isPreviewAll ? 'inline-flex' : 'none';
+        }
+        container.innerHTML = renderList.map(({ page: tp, globalIdx }) => `
           <div class="a4-sheet">
             <div class="a4-body-page">
               <div>${tp.bodyHtml}</div>
@@ -5291,6 +5504,7 @@
           </div>
         `).join('');
         A4Scaler.fitContainer(container);
+        RedrawIcons();
         container.scrollTop = 0;
       },
 
@@ -5771,11 +5985,14 @@
         const fee = Number(document.getElementById('profit-input-fee')?.value) || 8;
         const includeTax = document.getElementById('profit-include-tax') ? document.getElementById('profit-include-tax').checked : true;
 
+        const totalPages = Math.max(1, (this.allPages && this.allPages.length) ? this.allPages.length : document.querySelectorAll('#quote-preview-container .a4-sheet').length);
+        const prog = BtnProgress.start(document.getElementById('btn-profit-export-pdf'), totalPages);
         try {
           SaveStatus.setSaving('1/2 自動儲存最新報價與毛利...', 35);
           Toast.show('正在自動儲存最新報價並產製 PDF...', 'info');
           await Debouncer.flush('save_profit');
           await QuoteManager.saveAll(true);
+          prog.set(45);
 
           SaveStatus.setSaving('2/2 產製多頁估價單 PDF...', 80);
           const res = await ApiQueue.sendRequest('generateQuotePdf', {
@@ -5786,11 +6003,15 @@
             includeTax: includeTax
           });
           if (res && res.url) {
+            prog.done();
             SaveStatus.setSaved('報價已儲存並完成 PDF 匯出');
-            Toast.show('PDF 產製成功，即將開啟雲端連結');
-            setTimeout(() => window.open(res.url, '_blank'), 600);
+            CopyHelper.renderResultBox('profit-pdf-result', res.url);
+            Toast.show('PDF 已儲存至雲端硬碟');
+          } else {
+            prog.stop();
           }
         } catch (err) {
+          prog.stop();
           SaveStatus.setError('PDF 匯出失敗');
           Toast.show('PDF 產製失敗: ' + err.message, 'error');
         }
@@ -5802,6 +6023,7 @@
     // [MODIFIED] 支援手動自訂期數與 % 數的極簡 A4 合約渲染引擎
     const LegalManager = {
       currentDocTab: 'design_cover',
+      isPreviewAll: false,
       
       // 預設 5 期配比 (30/20/20/20/10%)
       stages: [
@@ -5963,7 +6185,29 @@
         }
       },
 
+      togglePreviewAll() {
+        this.isPreviewAll = !this.isPreviewAll;
+        const tabs = ['design_cover', 'design_body', 'constr_cover', 'constr_body', 'affidavit'];
+        const tabNames = ['設計合約封面', '設計合約內文', '工程承攬封面', '工程承攬內文', '切結與聲明書'];
+        const indicator = document.getElementById('legal-page-indicator');
+        tabs.forEach(k => {
+          const el = document.getElementById('doc-tab-' + k.replace('_', '-'));
+          if (el) el.classList.toggle('active', !this.isPreviewAll && k === this.currentDocTab);
+        });
+        if (indicator) {
+          const curIdx = tabs.indexOf(this.currentDocTab);
+          indicator.textContent = this.isPreviewAll
+            ? '全部預覽（完整 5 份合約文件）'
+            : `${curIdx + 1} / 5 頁（${tabNames[curIdx]}）`;
+        }
+        this.renderA4Preview(false);
+        if (this.isPreviewAll) {
+          document.getElementById('legal-preview-canvas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      },
+
       switchDocTab(tabKey) {
+        this.isPreviewAll = false;
         this.currentDocTab = tabKey;
         const tabs = ['design_cover', 'design_body', 'constr_cover', 'constr_body', 'affidavit'];
         const tabNames = ['設計合約封面', '設計合約內文', '工程承攬封面', '工程承攬內文', '切結與聲明書'];
@@ -6103,20 +6347,12 @@
         };
       },
 
-      renderA4Preview(autoSave = true) {
-        if (autoSave) this.scheduleSaveDraft();
-        const canvas = document.getElementById('legal-preview-canvas');
-        if (!canvas) return;
-        
-        canvas.scrollLeft = 0;
-        canvas.scrollTop = 0;
-
-        const p = this.getParams();
+      getDocHtml(tabKey, p) {
         const numToZh = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
         // 1. 設計合約封面
-        if (this.currentDocTab === 'design_cover') {
-          canvas.innerHTML = `
+        if (tabKey === 'design_cover') {
+          return `
             <div class="a4-sheet">
               <div class="a4-cover-page">
                 <img src="https://drive.google.com/thumbnail?id=1oQ6yFAMzJCBoGG_KFpbkbLVcIe61ASv9&sz=w1000" alt="暮川設計 LOGO" class="cover-emblem-badge" style="object-fit:contain; border:none; padding:0; background:transparent;">
@@ -6139,8 +6375,8 @@
           `;
         } 
         // 2. 設計合約內文 (完整 3 頁)
-        else if (this.currentDocTab === 'design_body') {
-          canvas.innerHTML = `
+        else if (tabKey === 'design_body') {
+          return `
             <!-- ================= 設計合約內文 第 1 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
@@ -6339,8 +6575,8 @@
           `;
         }
         // 3. 工程承攬封面
-        else if (this.currentDocTab === 'constr_cover') {
-          canvas.innerHTML = `
+        else if (tabKey === 'constr_cover') {
+          return `
             <div class="a4-sheet">
               <div class="a4-cover-page">
                 <img src="https://drive.google.com/thumbnail?id=1oQ6yFAMzJCBoGG_KFpbkbLVcIe61ASv9&sz=w1000" alt="暮川設計 LOGO" class="cover-emblem-badge" style="object-fit:contain; border:none; padding:0; background:transparent;">
@@ -6362,7 +6598,7 @@
             </div>
           `;
         }
-        else if (this.currentDocTab === 'constr_body') {
+        else if (tabKey === 'constr_body') {
           const stagesArr = Array.isArray(p.calculatedStages) && p.calculatedStages.length > 0 ? p.calculatedStages : [];
           const dynamicStagesHtml = stagesArr.map((stg, idx) => {
             const zhNo = numToZh[idx] || (idx + 1);
@@ -6390,7 +6626,7 @@
           const overdueZh = numToZh[stagesArr.length] || (stagesArr.length + 1);
           const partialZh = numToZh[stagesArr.length + 1] || (stagesArr.length + 2);
 
-          canvas.innerHTML = `
+          return `
             <!-- ================= 工程承攬內文 第 1 頁 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
@@ -6749,8 +6985,8 @@
             </div>
           `;
         }
-        else if (this.currentDocTab === 'affidavit') {
-          canvas.innerHTML = `
+        else if (tabKey === 'affidavit') {
+          return `
             <!-- ================= 第一頁：工程聲明切結書 ================= -->
             <div class="a4-sheet">
               <div class="a4-body-page">
@@ -7007,7 +7243,94 @@
             </div>
           `;
         }
+        return '';
+      },
+
+      renderA4Preview(autoSave = true) {
+        if (autoSave) this.scheduleSaveDraft();
+        const canvas = document.getElementById('legal-preview-canvas');
+        if (!canvas) return;
+
+        canvas.scrollLeft = 0;
+        canvas.scrollTop = 0;
+
+        const p = this.getParams();
+        const allTabs = ['design_cover', 'design_body', 'constr_cover', 'constr_body', 'affidavit'];
+        const btnAll = document.getElementById('btn-legal-preview-all');
+        const btnExport = document.getElementById('btn-legal-export-pdf');
+
+        if (btnAll) {
+          btnAll.classList.toggle('btn-primary', this.isPreviewAll);
+          btnAll.innerHTML = `<i data-lucide="${this.isPreviewAll ? 'minimize-2' : 'layers'}"></i>`;
+          btnAll.title = this.isPreviewAll ? '返回單頁籤預覽' : '全部預覽（由上而下檢視所有合約頁面）';
+        }
+        if (btnExport) {
+          btnExport.style.display = this.isPreviewAll ? 'inline-flex' : 'none';
+        }
+
+        if (this.isPreviewAll) {
+          canvas.innerHTML = allTabs.map(k => this.getDocHtml(k, p)).join('');
+        } else {
+          canvas.innerHTML = this.getDocHtml(this.currentDocTab, p);
+        }
         A4Scaler.fitContainer(canvas);
+        RedrawIcons();
+      },
+
+      buildGradientBgDataUrl() {
+        const c = document.createElement('canvas');
+        c.width = 4;
+        c.height = 1123;
+        const ctx = c.getContext('2d');
+        const grad = ctx.createLinearGradient(0, 0, 0, 1123);
+        grad.addColorStop(0, '#797880');
+        grad.addColorStop(0.30, '#606675');
+        grad.addColorStop(0.50, '#4a505e');
+        grad.addColorStop(0.80, '#2e394b');
+        grad.addColorStop(1, '#222d3b');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 4, 1123);
+        return c.toDataURL('image/png');
+      },
+
+      async exportAllPreviewPdf() {
+        const pId = StateStore.get('activeProject');
+        if (!pId) return Toast.show('請先選擇專案', 'error');
+
+        const p = this.getParams();
+        const allTabs = ['design_cover', 'design_body', 'constr_cover', 'constr_body', 'affidavit'];
+        const gradBgUrl = this.buildGradientBgDataUrl();
+        const rawSheetsHtml = allTabs
+          .map(k => this.getDocHtml(k, p))
+          .join('')
+          .replace(/<div class="a4-cover-page">/g, `<div class="a4-cover-page"><img src="${gradBgUrl}" style="position:absolute;top:0;left:0;width:794px;height:1123px;z-index:0;">`);
+
+        const totalPages = Math.max(1, document.querySelectorAll('#legal-preview-canvas .a4-sheet').length);
+        const prog = BtnProgress.start(document.getElementById('btn-legal-export-pdf'), totalPages);
+
+        SaveStatus.setSaving('輸出完整法務合約 PDF 至雲端...', 70);
+        Toast.show('正在將全部預覽頁面輸出成 PDF 並存入雲端硬碟...', 'info');
+        try {
+          await this.saveDraftToServer();
+          prog.set(40);
+          const res = await ApiQueue.sendRequest('exportLegalPreviewPdf', {
+            projectId: pId,
+            projectName: p.projectName || pId,
+            sheetsHtml: rawSheetsHtml
+          });
+          if (res && res.url) {
+            prog.done();
+            SaveStatus.setSaved('完整合約 PDF 已存至雲端');
+            CopyHelper.renderResultBox('legal-pdf-result', res.url);
+            Toast.show('完整合約 PDF 已儲存至雲端硬碟');
+          } else {
+            prog.stop();
+          }
+        } catch (err) {
+          prog.stop();
+          SaveStatus.setError('合約 PDF 輸出失敗');
+          Toast.show('輸出失敗: ' + err.message, 'error');
+        }
       },
 
       async compileContracts() {
