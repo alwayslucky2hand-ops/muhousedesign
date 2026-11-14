@@ -2397,24 +2397,47 @@
 
       async sendToLine(idx) {
         const record = StateStore.state.contractorInquiries[idx];
-        const text = record.inquiryText;
+        const text = String(record.inquiryText || '').trim();
         if (!text) return Toast.show('請先填寫詢價內容', 'error');
+
+        // 前端防重複攔截：若內容與上次已發送內容完全一致，直接提醒不重送
+        if (record.sendStatus && record.sentTextSnapshot === text) {
+          return Toast.show('此封詢價訊息已發送過，若要重發請先修改詢價內容', 'info');
+        }
 
         const pId = StateStore.get('activeProject');
         const vName = record.contractor || '未指定廠商';
         const lId = record.lineId || '';
 
+        SaveStatus.setSaving(`發送詢價訊息至 ${vName}...`, 55);
         Toast.show(`正在發送訊息給廠商 (${vName})...`, 'info');
         try {
-          await ApiQueue.sendRequest('logVendorInteraction', {
+          const res = await ApiQueue.sendRequest('logVendorInteraction', {
             projectId: pId,
+            inquiryId: record.inquiryId || '',
             vendorName: vName,
             lineId: lId,
             category: record.category || '工程發包',
             messageText: text
           });
-          Toast.show('已發送訊息至廠商 LINE！');
+
+          if (res && res.blocked) {
+            record.sendStatus = res.sendStatus || record.sendStatus || '已發送';
+            record.sentTextSnapshot = text;
+            this.renderInquiries();
+            SaveStatus.setSaved('已攔截重複發送');
+            Toast.show(res.message || '此封詢價已發送過，系統已攔截重複推播', 'info');
+            return;
+          }
+
+          record.sendStatus = (res && res.sendStatus) ? res.sendStatus : `已發送 (${AudioManager.formatTimestamp(new Date())})`;
+          record.sentTextSnapshot = text;
+          await this.saveInquiries(true);
+          this.renderInquiries();
+          SaveStatus.setSaved(`已發送至 ${vName}`);
+          Toast.show('已發送訊息至廠商 LINE，並鎖定防重複');
         } catch (err) {
+          SaveStatus.setError('發送訊息失敗');
           console.error('發送失敗: ', err);
           Toast.show('發送訊息失敗: ' + err.message, 'error');
         }
@@ -2758,14 +2781,20 @@
                   ` : ''}
                 </div>
 
-                <!-- 5. 詢價內容 (單欄由上而下) -->
+                <!-- 5. 詢價內容 (單欄由上而下，修改內容後自動解鎖可再次發送) -->
                 <div class="input-field-group">
-                  <label class="input-field-label">詢價內容</label>
-                  <textarea class="spec-input" onblur="CostManager.updateField(${i},'inquiryText',this.value)">${r.inquiryText || ''}</textarea>
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <label class="input-field-label">詢價內容</label>
+                    ${(r.sendStatus && r.sentTextSnapshot === String(r.inquiryText || '').trim()) ? `<span style="display:inline-flex; align-items:center; gap:5px; font-size:0.76rem; color:#111111; border:1px solid var(--line-dark); padding:1px 8px;"><i data-lucide="check" style="width:12px; height:12px;"></i> ${(r.sendStatus || '').split('｜')[0]}</span>` : ''}
+                  </div>
+                  <textarea class="spec-input" oninput="CostManager.updateField(${i},'inquiryText',this.value)" onblur="CostManager.updateField(${i},'inquiryText',this.value); CostManager.renderInquiries();">${r.inquiryText || ''}</textarea>
                 </div>
 
                 <div style="margin-bottom:20px;">
-                  <button class="btn btn-icon-only" style="width:100%;" onclick="CostManager.sendToLine(${i})" title="發送 LINE 詢價"><i data-lucide="send"></i></button>
+                  ${(r.sendStatus && r.sentTextSnapshot === String(r.inquiryText || '').trim())
+                    ? `<button class="btn" style="width:100%; border-color:var(--line-light); color:var(--text-secondary) !important; background:#FAFAFA !important;" onclick="CostManager.sendToLine(${i})" title="此封詢價已發送（修改內容後可再次發送）"><i data-lucide="check" style="width:16px; height:16px;"></i></button>`
+                    : `<button class="btn btn-icon-only" style="width:100%;" onclick="CostManager.sendToLine(${i})" title="發送 LINE 詢價"><i data-lucide="send"></i></button>`
+                  }
                 </div>
 
                 <!-- 6. AI 單據解析區塊 -->
@@ -5747,24 +5776,27 @@
                   }
                 }
                 const rawQuotes = res.quotations || [];
-                StateStore.state.quotationDraftItems = rawQuotes.map(q => ({
-                  _id: 'Q-' + Math.random(),
+                StateStore.state.quotationTableItems = rawQuotes.map(q => ({
+                  _id: 'QT-' + Math.random(),
                   category: q.category || '木作工程',
                   spaceName: q.spaceName || '',
                   itemName: q.nameAndSpec || '',
                   dimensions: q.dimensions || '',
                   styleTag: q.styleTag || '',
                   remarks: q.remarks || '',
-                  l: '', w: '', h: '',
-                  isDimSkip: true,
-                  dimUnit: 'cm',
                   quantity: q.quantity || 1,
                   unit: q.unit || '式',
                   unitPrice: q.unitPrice || 0,
-                  subtotal: q.subtotal || 0,
-                  isCollapsed: true
+                  subtotal: q.subtotal || 0
                 }));
-                StateStore.state.quotationTableItems = [];
+                StateStore.state.quotationDraftItems = StateStore.state.quotationTableItems.map(item => ({
+                  ...JSON.parse(JSON.stringify(item)),
+                  _id: 'Q-' + Math.random(),
+                  isCollapsed: true,
+                  isDimSkip: true,
+                  dimUnit: 'cm',
+                  l: '', w: '', h: ''
+                }));
                 StateStore.state.interviewRecords = res.interviewRecords || [];
                 
                 // 強制清空所有畫面殘留
