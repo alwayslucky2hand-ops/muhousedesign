@@ -835,9 +835,9 @@
     
     <div class="toolbar" style="flex-wrap:wrap; justify-content:space-between;">
       
-      <div id="global-save-status" style="display:inline-flex; align-items:center; gap:10px; padding:6px 14px; border:1px solid var(--line-light); background:#FFFFFF; font-size:0.82rem; color:var(--text-secondary); min-height:36px; position:relative; overflow:hidden;">
-        <span id="global-save-dot" style="width:7px; height:7px; border-radius:50%; background:#999999; flex-shrink:0;"></span>
-        <span id="global-save-text" style="white-space:nowrap;">等待選擇專案</span>
+      <div id="global-save-status" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid var(--line-light); background:#FFFFFF; font-size:0.82rem; color:var(--text-secondary); min-height:36px; position:relative; overflow:hidden;">
+        <span id="global-save-icon" style="display:inline-flex; align-items:center; color:#555555;"><i data-lucide="file-plus" style="width:14px; height:14px;"></i></span>
+        <span id="global-save-text" style="white-space:nowrap;">尚未選擇專案（全新空白）</span>
         <span id="global-save-pct" style="font-family:'Inter',sans-serif; font-weight:600; color:#111111; display:none;">0%</span>
         <div id="global-save-bar" style="position:absolute; left:0; bottom:0; height:2px; width:0%; background:#111111; transition:width 0.25s ease;"></div>
       </div>
@@ -911,15 +911,27 @@
           <div id="audio-panel-left" class="design-panel active">
             <div style="border: 1px dashed var(--line-light); padding: 24px; text-align: center; margin-bottom: 24px; background:#FFF;">
               <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;">
-                <button id="btn-record" class="btn btn-primary btn-icon-only" onclick="AudioManager.startRecord()" title="開始錄音"><i data-lucide="mic"></i></button>
-                <button id="btn-stop" class="btn btn-icon-only" onclick="AudioManager.stopRecord()" disabled title="停止錄音"><i data-lucide="square"></i></button>
-                <button id="btn-transcribe" class="btn btn-icon-only" onclick="AudioManager.transcribeAllChunks()" style="border-color:var(--line-dark);" title="語音解析"><i data-lucide="cpu"></i></button>
+                <button id="btn-record" class="btn btn-primary btn-icon-only" onclick="AudioManager.startRecord()" title="步驟 1：開始錄音"><i data-lucide="mic"></i></button>
+                <button id="btn-stop" class="btn btn-icon-only" onclick="AudioManager.stopRecord()" disabled title="步驟 2：停止錄音"><i data-lucide="square"></i></button>
+                <button id="btn-transcribe" class="btn btn-icon-only" onclick="AudioManager.transcribeAllChunks()" style="border-color:var(--line-dark);" title="步驟 3：AI 語音解析"><i data-lucide="cpu"></i></button>
               </div>
               <div id="audio-timer" style="font-size:2rem; font-family:'Inter', sans-serif; font-weight:300; margin-top:12px;">00:00</div>
-              <div id="audio-bg-hint" style="font-size:0.8rem; color:var(--text-secondary); margin-top:6px;">錄音每 30 秒自動備份，點擊處理圖標開始聽打。</div>
+              <div id="audio-step-guide" style="font-size:0.82rem; color:var(--text-primary); margin-top:8px; font-weight:500;">步驟 1：點擊麥克風開始錄音（每 30 秒自動雲端建檔）</div>
               <button id="btn-fake-sleep" class="btn" style="margin-top:14px; font-size:0.82rem; border-color:var(--line-dark); display:none;" onclick="AudioManager.enterFakeSleep()">
-                🌙 進入防誤觸黑屏省電模式（放口袋專用）
+                <i data-lucide="moon" style="width:15px; height:15px;"></i> 進入防誤觸黑屏省電模式（放口袋專用）
               </button>
+
+              
+              <div id="audio-clips-wrapper" data-audio-accordion="true" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line-light); text-align:left;">
+                <div style="display:flex; justify-content:center;">
+                  <button id="btn-toggle-clips" class="btn" style="min-height:34px; padding:0 14px; border-color:var(--line-dark) !important; gap:8px;" onclick="AudioManager.toggleClipsAccordion()" title="展開/收合雲端已建檔音訊">
+                    <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
+                    <span id="audio-clips-count" style="font-family:'Inter',sans-serif; font-weight:600; font-size:0.85rem;">0</span>
+                    <i id="audio-clips-chevron" data-lucide="chevron-down" style="width:14px; height:14px;"></i>
+                  </button>
+                </div>
+                <div id="audio-clips-list" style="display:none; margin-top:12px; border:1px solid var(--line-light); background:#FAFAFA; padding:8px 12px;"></div>
+              </div>
             </div>
 
             
@@ -935,18 +947,16 @@
                   <h3>逐字稿</h3>
                   <span id="audio-slice-status" style="font-size:0.82rem; color:var(--text-secondary); font-weight:400;"></span>
                 </div>
-                <button class="btn btn-icon-only" style="min-height:32px;" onclick="AudioManager.syncEditorToTextarea(); ProjectManager.saveTextField('transcript', 'live-transcript')" title="儲存逐字稿"><i data-lucide="save"></i></button>
               </div>
-              <div id="live-transcript-editor" class="spec-input" contenteditable="true" style="border:none; min-height:220px; max-height:520px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.75;" oninput="AudioManager.syncEditorToTextarea(); Debouncer.run('save_transcript', () =&gt; ProjectManager.saveTextField('transcript', 'live-transcript', true), 1500, '逐字稿')" onblur="AudioManager.syncEditorToTextarea(); Debouncer.flush('save_transcript')"></div>
+              <div id="live-transcript-editor" class="spec-input" contenteditable="true" style="border:none; min-height:220px; max-height:520px; overflow-y:auto; white-space:pre-wrap; word-break:break-word; line-height:1.75; font-size:0.95rem;" oninput="AudioManager.syncEditorToTextarea(); Debouncer.run('save_transcript', () =&gt; ProjectManager.saveTextField('transcript', 'live-transcript', true), 600, '逐字稿')" onblur="AudioManager.syncEditorToTextarea(); Debouncer.flush('save_transcript')"></div>
               <textarea id="live-transcript" class="spec-input" style="display:none;"></textarea>
             </div>
             
             <div class="quote-item-card">
               <div class="item-card-header">
                 <h3>注記</h3>
-                <button class="btn btn-icon-only" style="min-height:32px;" onclick="ProjectManager.saveTextField('notes', 'live-notes')" title="儲存注記"><i data-lucide="save"></i></button>
               </div>
-              <textarea id="live-notes" class="spec-input" style="border:none; min-height:120px;" oninput="Debouncer.run('save_notes', () => ProjectManager.saveTextField('notes', 'live-notes', true), 1200, '現場注記')" onblur="Debouncer.flush('save_notes')"></textarea>
+              <textarea id="live-notes" class="spec-input" style="border:none; min-height:130px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_notes', () => ProjectManager.saveTextField('notes', 'live-notes', true), 600, '現場注記')" onblur="Debouncer.flush('save_notes')"></textarea>
             </div>
           </div>
 
@@ -957,20 +967,32 @@
                 <button class="btn btn-primary btn-icon-only" onclick="ProjectManager.generateAnalysis('warning')" style="flex:1;" title="分析工程風險"><i data-lucide="alert-triangle"></i></button>
               </div>
               <div class="input-field-group">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label class="input-field-label">專案總結</label>
-                  <button class="btn btn-icon-only" style="min-height:26px; border:none;" onclick="ProjectManager.saveTextField('summary', 'box-summary')" title="儲存總結"><i data-lucide="save" style="width:16px;"></i></button>
-                </div>
-                <textarea id="box-summary" class="spec-input" oninput="Debouncer.run('save_summary', () => ProjectManager.saveTextField('summary', 'box-summary', true), 1200, '專案總結')" onblur="Debouncer.flush('save_summary')"></textarea>
+                <label class="input-field-label">專案總結</label>
+                <textarea id="box-summary" class="spec-input" style="min-height:120px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_summary', () => ProjectManager.saveTextField('summary', 'box-summary', true), 600, '專案總結')" onblur="Debouncer.flush('save_summary')"></textarea>
               </div>
               <div class="input-field-group" style="margin-top:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <label class="input-field-label">防禦與注意</label>
-                  <button class="btn btn-icon-only" style="min-height:26px; border:none;" onclick="ProjectManager.saveTextField('warning', 'box-warning')" title="儲存注意"><i data-lucide="save" style="width:16px;"></i></button>
-                </div>
-                <textarea id="box-warning" class="spec-input" oninput="Debouncer.run('save_warning', () => ProjectManager.saveTextField('warning', 'box-warning', true), 1200, '防禦與注意')" onblur="Debouncer.flush('save_warning')"></textarea>
+                <label class="input-field-label">防禦與注意</label>
+                <textarea id="box-warning" class="spec-input" style="min-height:120px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_warning', () => ProjectManager.saveTextField('warning', 'box-warning', true), 600, '防禦與注意')" onblur="Debouncer.flush('save_warning')"></textarea>
               </div>
+              <button class="btn btn-primary btn-icon-only" style="width:100%; margin-top:12px;" onclick="AudioManager.archiveCurrentSession()" title="歸檔至歷史紀錄">
+                <i data-lucide="archive" style="width:18px; height:18px;"></i>
+              </button>
             </div>
+          </div>
+        </div>
+
+        
+        <div class="accordion-item" data-audio-accordion="true" style="margin-top: 24px;">
+          <div class="accordion-header" onclick="AudioManager.toggleHistoryAccordion()">
+            <span style="display:inline-flex; align-items:center; gap:8px; font-weight:600;">
+              <i data-lucide="history" style="width:16px; height:16px;"></i>
+              <span>歷史紀錄</span>
+              <span id="audio-history-count" style="font-family:'Inter',sans-serif; font-size:0.8rem; border:1px solid var(--line-dark); padding:0 6px;">0</span>
+            </span>
+            <i id="audio-history-chevron" data-lucide="chevron-down" style="width:16px; height:16px;"></i>
+          </div>
+          <div id="audio-history-body" class="accordion-content" style="padding:16px;">
+            <div id="audio-history-list" style="color:var(--text-muted); text-align:center; padding:20px;">尚無歷史丈量紀錄</div>
           </div>
         </div>
       </div>
@@ -1374,64 +1396,79 @@
 
     
     const SaveStatus = {
+      _setIcon(name, color = '#111111') {
+        const iconEl = document.getElementById('global-save-icon');
+        if (!iconEl) return;
+        iconEl.style.color = color;
+        iconEl.innerHTML = `<i data-lucide="${name}" style="width:14px; height:14px;"></i>`;
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+      setIdle(label = '尚未選擇專案（全新空白）') {
+        const box = document.getElementById('global-save-status');
+        const txt = document.getElementById('global-save-text');
+        const pct = document.getElementById('global-save-pct');
+        const bar = document.getElementById('global-save-bar');
+        if (!box) return;
+        box.style.borderColor = 'var(--line-light)';
+        this._setIcon('file-plus', '#555555');
+        txt.textContent = label;
+        pct.style.display = 'none';
+        bar.style.width = '0%';
+      },
       setPending(label = '變更待儲存') {
         const box = document.getElementById('global-save-status');
-        const dot = document.getElementById('global-save-dot');
         const txt = document.getElementById('global-save-text');
         const pct = document.getElementById('global-save-pct');
         const bar = document.getElementById('global-save-bar');
         if (!box) return;
         box.style.borderColor = '#111111';
-        dot.style.background = '#d97706';
-        txt.textContent = `準備自動儲存：${label}...`;
+        this._setIcon('clock', '#555555');
+        txt.textContent = `準備自動儲存：${label}`;
         pct.style.display = 'none';
         bar.style.width = '25%';
       },
       setSaving(label = '儲存中', percent = 55) {
         const box = document.getElementById('global-save-status');
-        const dot = document.getElementById('global-save-dot');
         const txt = document.getElementById('global-save-text');
         const pct = document.getElementById('global-save-pct');
         const bar = document.getElementById('global-save-bar');
         if (!box) return;
         box.style.borderColor = '#111111';
-        dot.style.background = '#111111';
-        txt.textContent = `⏳ ${label}`;
+        this._setIcon('loader', '#111111');
+        txt.textContent = label;
         pct.style.display = 'inline';
         pct.textContent = `${Math.min(100, Math.max(0, Math.round(percent)))}%`;
         bar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
       },
       setSaved(label = '已自動儲存') {
         const box = document.getElementById('global-save-status');
-        const dot = document.getElementById('global-save-dot');
         const txt = document.getElementById('global-save-text');
         const pct = document.getElementById('global-save-pct');
         const bar = document.getElementById('global-save-bar');
         if (!box) return;
         const now = new Date().toTimeString().slice(0, 8);
         box.style.borderColor = 'var(--line-light)';
-        dot.style.background = '#16a34a';
-        txt.textContent = `✓ ${label} (${now})`;
+        this._setIcon('check', '#111111');
+        txt.textContent = `${label} (${now})`;
         pct.style.display = 'none';
         bar.style.width = '100%';
         setTimeout(() => { if (bar.style.width === '100%') bar.style.width = '0%'; }, 1000);
       },
       setError(label = '儲存失敗，請重試') {
         const box = document.getElementById('global-save-status');
-        const dot = document.getElementById('global-save-dot');
         const txt = document.getElementById('global-save-text');
         const pct = document.getElementById('global-save-pct');
         const bar = document.getElementById('global-save-bar');
         if (!box) return;
         box.style.borderColor = '#ff4d4f';
-        dot.style.background = '#ff4d4f';
-        txt.textContent = `⚠️ ${label}`;
+        this._setIcon('alert-circle', '#ff4d4f');
+        txt.textContent = label;
         pct.style.display = 'none';
         bar.style.width = '0%';
       }
     };
 
-    
+    // 樂觀 UI 核心引擎：輸入防抖與自動背景存檔（支援立即沖刷待存佇列）
     const Debouncer = {
       timers: {},
       callbacks: {},
@@ -1488,7 +1525,7 @@
     
     const StateStore = {
       state: { 
-        activeProject: '', clientName: '', audioQueue: [], contractorOcrItems: [], contractorInquiries: [],
+        activeProject: '', clientName: '', audioQueue: [], audioHistory: [], contractorOcrItems: [], contractorInquiries: [],
         vendorBindings: [],
         interviewRecords: [], activeRecordIdx: 0, 
         quotationDraftItems: [], quotationTableItems: [], financialControls: { discountAmount: 0, managementFeeRate: 8 }, 
@@ -2713,8 +2750,8 @@
                     <ul class="uploaded-file-list">
                       ${blueprintList.map((u, uIdx) => `
                         <li class="uploaded-file-item">
-                          <a href="${u}" target="_blank" rel="noopener noreferrer" class="uploaded-file-link">📄 ${u}</a>
-                          <button type="button" class="uploaded-file-remove" onclick="CostManager.removeBlueprint(${i}, ${uIdx})" title="移除此施工圖檔案">✕</button>
+                          <a href="${u}" target="_blank" rel="noopener noreferrer" class="uploaded-file-link" style="display:inline-flex; align-items:center; gap:6px;"><i data-lucide="file-text" style="width:14px; height:14px; flex-shrink:0;"></i> ${u}</a>
+                          <button type="button" class="uploaded-file-remove" onclick="CostManager.removeBlueprint(${i}, ${uIdx})" title="移除此施工圖檔案"><i data-lucide="x" style="width:14px; height:14px;"></i></button>
                         </li>
                       `).join('')}
                     </ul>
@@ -2753,8 +2790,8 @@
                       <ul class="uploaded-file-list">
                         ${quoteFileList.map((f, fIdx) => `
                           <li class="uploaded-file-item">
-                            <a href="${f.url}" target="_blank" rel="noopener noreferrer" class="uploaded-file-link">📄 ${f.url}</a>
-                            <button type="button" class="uploaded-file-remove" onclick="CostManager.removeQuoteFile(${i}, ${fIdx})" title="移除此報價單檔案">✕</button>
+                            <a href="${f.url}" target="_blank" rel="noopener noreferrer" class="uploaded-file-link" style="display:inline-flex; align-items:center; gap:6px;"><i data-lucide="file-text" style="width:14px; height:14px; flex-shrink:0;"></i> ${f.url}</a>
+                            <button type="button" class="uploaded-file-remove" onclick="CostManager.removeQuoteFile(${i}, ${fIdx})" title="移除此報價單檔案"><i data-lucide="x" style="width:14px; height:14px;"></i></button>
                           </li>
                         `).join('')}
                       </ul>
@@ -2933,6 +2970,315 @@
       isRecording: false,
       isUploadingSlice: false,
       isTranscribing: false,
+      sessionClips: [],
+      sessionStartTimestamp: '',
+      isClipsOpen: false,
+      isHistoryOpen: false,
+
+      formatTimestamp(d = new Date()) {
+        const dt = (d instanceof Date) ? d : new Date(d);
+        if (isNaN(dt.getTime())) return '';
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        const day = String(dt.getDate()).padStart(2, '0');
+        const hh = String(dt.getHours()).padStart(2, '0');
+        const mm = String(dt.getMinutes()).padStart(2, '0');
+        const ss = String(dt.getSeconds()).padStart(2, '0');
+        return `${y}/${m}/${day}-${hh}:${mm}:${ss}`;
+      },
+
+      setStepGuide(text) {
+        const el = document.getElementById('audio-step-guide');
+        if (el) el.textContent = text;
+      },
+
+      activeHistoryIdx: -1,
+      activeHistorySubTab: '', // 'clips' | 'fields' | ''
+
+      collapseAllAccordions() {
+        this.isClipsOpen = false;
+        const clipsList = document.getElementById('audio-clips-list');
+        const clipsChev = document.getElementById('audio-clips-chevron');
+        if (clipsList) clipsList.style.display = 'none';
+        if (clipsChev) clipsChev.setAttribute('data-lucide', 'chevron-down');
+
+        this.isHistoryOpen = false;
+        this.activeHistoryIdx = -1;
+        this.activeHistorySubTab = '';
+        const hBody = document.getElementById('audio-history-body');
+        const hChev = document.getElementById('audio-history-chevron');
+        if (hBody) hBody.classList.remove('active');
+        if (hChev) hChev.setAttribute('data-lucide', 'chevron-down');
+
+        document.querySelectorAll('[id^="audio-history-item-"]').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('[id^="audio-history-sub-"]').forEach(el => { el.style.display = 'none'; });
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+
+      toggleClipsAccordion() {
+        const nextState = !this.isClipsOpen;
+        this.collapseAllAccordions();
+        this.isClipsOpen = nextState;
+        const listEl = document.getElementById('audio-clips-list');
+        const chevEl = document.getElementById('audio-clips-chevron');
+        if (listEl) listEl.style.display = this.isClipsOpen ? 'block' : 'none';
+        if (chevEl) chevEl.setAttribute('data-lucide', this.isClipsOpen ? 'chevron-up' : 'chevron-down');
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+
+      renderClipsAccordion() {
+        const wrapper = document.getElementById('audio-clips-wrapper');
+        const countEl = document.getElementById('audio-clips-count');
+        const listEl = document.getElementById('audio-clips-list');
+        if (!wrapper || !countEl || !listEl) return;
+
+        if (this.sessionClips.length === 0) {
+          wrapper.style.display = 'none';
+          this.isClipsOpen = false;
+          listEl.style.display = 'none';
+          listEl.innerHTML = '';
+          return;
+        }
+
+        wrapper.style.display = 'block';
+        countEl.textContent = String(this.sessionClips.length);
+        listEl.innerHTML = this.sessionClips.map((c, idx) => `
+          <div style="display:flex; flex-direction:column; gap:6px; padding:12px 8px; border-bottom:1px solid var(--line-light); font-size:0.88rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="display:inline-flex; align-items:center; gap:8px; color:#111111;">
+                <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
+                <b style="font-family:'Inter',sans-serif;">${idx + 1}</b>
+                <span style="color:var(--text-secondary);">${c.timeRange || ''}</span>
+              </span>
+              <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="btn btn-icon-only" style="min-height:32px; text-decoration:none;" title="開啟雲端錄音檔">
+                <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+              </a>
+            </div>
+          </div>
+        `).join('');
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+
+      toggleHistoryAccordion() {
+        const nextState = !this.isHistoryOpen;
+        this.collapseAllAccordions();
+        this.isHistoryOpen = nextState;
+        const body = document.getElementById('audio-history-body');
+        const chev = document.getElementById('audio-history-chevron');
+        if (body) body.classList.toggle('active', this.isHistoryOpen);
+        if (chev) chev.setAttribute('data-lucide', this.isHistoryOpen ? 'chevron-up' : 'chevron-down');
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+
+      toggleHistoryItem(idx) {
+        const isSame = (this.activeHistoryIdx === idx);
+        this.activeHistoryIdx = isSame ? -1 : idx;
+        this.activeHistorySubTab = '';
+
+        document.querySelectorAll('[id^="audio-history-item-"]').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('[id^="audio-history-sub-"]').forEach(el => { el.style.display = 'none'; });
+
+        if (!isSame) {
+          const el = document.getElementById(`audio-history-item-${idx}`);
+          if (el) el.classList.add('active');
+        }
+      },
+
+      toggleHistorySub(idx, subType) {
+        const targetId = `audio-history-sub-${subType}-${idx}`;
+        const otherType = subType === 'clips' ? 'fields' : 'clips';
+        const otherId = `audio-history-sub-${otherType}-${idx}`;
+
+        const targetEl = document.getElementById(targetId);
+        const otherEl = document.getElementById(otherId);
+        const isCurrentlyOpen = (this.activeHistoryIdx === idx && this.activeHistorySubTab === subType);
+
+        if (otherEl) otherEl.style.display = 'none';
+        if (targetEl) targetEl.style.display = isCurrentlyOpen ? 'none' : 'block';
+        this.activeHistorySubTab = isCurrentlyOpen ? '' : subType;
+      },
+
+      updateHistoryField(idx, field, value, immediate = false) {
+        const history = StateStore.state.audioHistory || [];
+        const item = history[idx];
+        const pId = StateStore.get('activeProject');
+        if (!item || !pId) return;
+
+        // 1. 零秒樂觀 UI 即時更新記憶體狀態
+        item[field] = value;
+
+        // 2. 背景無感同步至試算表對應儲存格
+        const key = `his_${item.recordId}_${field}`;
+        const doSync = async () => {
+          SaveStatus.setSaving('背景同步歷史紀錄...', 65);
+          try {
+            await ApiQueue.sendRequest('updateAudioHistoryField', {
+              projectId: pId,
+              recordId: item.recordId,
+              field: field,
+              value: value
+            });
+            SaveStatus.setSaved('歷史紀錄已即時更新');
+          } catch (err) {
+            SaveStatus.setError('歷史紀錄更新失敗');
+            console.error(err);
+          }
+        };
+
+        if (immediate) {
+          if (Debouncer.timers[key]) { clearTimeout(Debouncer.timers[key]); delete Debouncer.timers[key]; }
+          doSync();
+        } else {
+          Debouncer.run(key, doSync, 450, '歷史紀錄');
+        }
+      },
+
+      renderHistoryAccordion() {
+        const listEl = document.getElementById('audio-history-list');
+        const countEl = document.getElementById('audio-history-count');
+        const items = StateStore.state.audioHistory || [];
+        if (countEl) countEl.textContent = String(items.length);
+        if (!listEl) return;
+
+        if (items.length === 0) {
+          listEl.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:24px; font-size:0.9rem;">尚無歷史丈量紀錄</div>';
+          return;
+        }
+
+        listEl.innerHTML = items.map((h, i) => {
+          const clipCount = (h.clips || []).length;
+          const clipsListHtml = clipCount > 0
+            ? h.clips.map((u, uIdx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--line-light); background:#FFFFFF; margin-bottom:8px;">
+                  <span style="display:inline-flex; align-items:center; gap:8px; font-size:0.88rem; color:#111111;">
+                    <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
+                    <b style="font-family:'Inter',sans-serif;">${uIdx + 1}</b>
+                  </span>
+                  <a href="${u}" target="_blank" rel="noopener noreferrer" class="btn btn-icon-only" style="min-height:32px; text-decoration:none;" title="開啟雲端錄音檔">
+                    <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+                  </a>
+                </div>
+              `).join('')
+            : '<div style="color:var(--text-muted); font-size:0.85rem; padding:12px;">本次無雲端音訊檔</div>';
+
+          return `
+            <div class="accordion-item" style="margin-bottom:14px;">
+              <div class="accordion-header" onclick="AudioManager.toggleHistoryItem(${i})">
+                <span style="display:inline-flex; align-items:center; gap:10px; font-size:0.92rem; line-height:1.4; word-break:break-word;">
+                  <i data-lucide="clock" style="width:15px; height:15px; color:var(--text-secondary); flex-shrink:0;"></i>
+                  <b style="font-family:'Inter',sans-serif;">${h.timestamp || '已歸檔紀錄'}</b>
+                </span>
+                <i data-lucide="chevron-down" style="width:16px; height:16px; flex-shrink:0;"></i>
+              </div>
+
+              <div id="audio-history-item-${i}" class="accordion-content" style="background:#FAFAFA !important; padding:16px;">
+                <!-- 單欄垂直排列子收合區控制鈕（不並排、不擠壓、純線條 Icon + 數字） -->
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <button class="btn" style="width:100%; justify-content:space-between; padding:0 16px;" onclick="AudioManager.toggleHistorySub(${i}, 'clips')">
+                    <span style="display:inline-flex; align-items:center; gap:8px;">
+                      <i data-lucide="file-audio" style="width:16px; height:16px;"></i>
+                      <span style="font-family:'Inter',sans-serif; font-weight:600;">${clipCount}</span>
+                    </span>
+                    <i data-lucide="chevron-down" style="width:15px; height:15px;"></i>
+                  </button>
+                  <div id="audio-history-sub-clips-${i}" style="display:none; padding:4px 0 8px 0;">
+                    ${clipsListHtml}
+                  </div>
+
+                  <button class="btn" style="width:100%; justify-content:space-between; padding:0 16px;" onclick="AudioManager.toggleHistorySub(${i}, 'fields')">
+                    <span style="display:inline-flex; align-items:center; gap:8px;">
+                      <i data-lucide="file-text" style="width:16px; height:16px;"></i>
+                      <span style="font-family:'Inter',sans-serif; font-weight:600;">4</span>
+                    </span>
+                    <i data-lucide="chevron-down" style="width:15px; height:15px;"></i>
+                  </button>
+                  <div id="audio-history-sub-fields-${i}" style="display:none; padding-top:8px;">
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                      <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
+                        <label class="input-field-label" style="display:block; margin-bottom:8px;">逐字稿</label>
+                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:140px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'transcript', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'transcript', this.value, true)">${this.escapeHtml(h.transcript || '')}</textarea>
+                      </div>
+                      <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
+                        <label class="input-field-label" style="display:block; margin-bottom:8px;">注記</label>
+                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'notes', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'notes', this.value, true)">${this.escapeHtml(h.notes || '')}</textarea>
+                      </div>
+                      <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
+                        <label class="input-field-label" style="display:block; margin-bottom:8px;">專案總結</label>
+                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'summary', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'summary', this.value, true)">${this.escapeHtml(h.summary || '')}</textarea>
+                      </div>
+                      <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
+                        <label class="input-field-label" style="display:block; margin-bottom:8px;">防禦與注意</label>
+                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'warning', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'warning', this.value, true)">${this.escapeHtml(h.warning || '')}</textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+
+      async archiveCurrentSession() {
+        const pId = StateStore.get('activeProject');
+        if (!pId) return Toast.show('請先選擇專案', 'error');
+
+        this.syncEditorToTextarea();
+        const transcript = (document.getElementById('live-transcript')?.value || '').trim();
+        const notes = (document.getElementById('live-notes')?.value || '').trim();
+        const summary = (document.getElementById('box-summary')?.value || '').trim();
+        const warning = (document.getElementById('box-warning')?.value || '').trim();
+
+        if (!transcript && !notes && !summary && !warning && this.sessionClips.length === 0) {
+          return Toast.show('目前四個欄位皆為空白，無需歸檔', 'info');
+        }
+
+        // 先停止尚未觸發的防抖自動存檔，避免清空後又被舊定時器覆蓋
+        ['save_transcript', 'save_notes', 'save_summary', 'save_warning'].forEach(k => {
+          if (Debouncer.timers[k]) { clearTimeout(Debouncer.timers[k]); delete Debouncer.timers[k]; }
+          delete Debouncer.callbacks[k];
+        });
+
+        const recordedAt = this.sessionStartTimestamp || this.formatTimestamp(new Date());
+        SaveStatus.setSaving('正在儲存並歸檔至歷史紀錄...', 60);
+        try {
+          const res = await ApiQueue.sendRequest('archiveAudioSession', {
+            projectId: pId,
+            transcript: transcript,
+            notes: notes,
+            summary: summary,
+            warning: warning,
+            clips: this.sessionClips,
+            recordedAt: recordedAt
+          });
+
+          if (res) {
+            if (!Array.isArray(StateStore.state.audioHistory)) StateStore.state.audioHistory = [];
+            StateStore.state.audioHistory.unshift(res);
+
+            // 儲存成功後立即清空四個欄位與本次音檔暫存，回到乾淨待機狀態
+            this.setTranscriptValue('');
+            ['live-notes', 'box-summary', 'box-warning'].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.value = '';
+            });
+            this.sessionClips = [];
+            this.sessionStartTimestamp = '';
+            this.renderClipsAccordion();
+            this.renderHistoryAccordion();
+
+            const statusEl = document.getElementById('audio-slice-status');
+            if (statusEl) statusEl.textContent = '';
+            this.setStepGuide('已歸檔至下方歷史紀錄，可隨時展開查閱或開始下一段錄音');
+            SaveStatus.setSaved('丈量紀錄已歸檔');
+            Toast.show('已儲存並歸檔至下方歷史紀錄');
+          }
+        } catch (err) {
+          SaveStatus.setError('歸檔失敗');
+          Toast.show('歸檔失敗: ' + err.message, 'error');
+        }
+      },
 
       async requestWakeLock() {
         try {
@@ -3156,7 +3502,14 @@
             chunkRecord.driveUrl = res.url;
             chunkRecord.isStored = true;
             await AudioIDB.updateChunk(chunkRecord);
-            Toast.show(`【第 ${chunkRecord.chunkIndex} 片段】(${chunkRecord.startTimeStr}～${chunkRecord.endTimeStr}) 已自動建檔至雲端`);
+            this.sessionClips.push({
+              chunkIndex: chunkRecord.chunkIndex,
+              timeRange: `${chunkRecord.startTimeStr}～${chunkRecord.endTimeStr}`,
+              url: res.url
+            });
+            this.renderClipsAccordion();
+            SaveStatus.setSaved(`第 ${chunkRecord.chunkIndex} 段音檔已建檔`);
+            Toast.show(`第 ${chunkRecord.chunkIndex} 片段已自動建檔至雲端`);
           }
         } catch (e) {
           console.warn('雲端建檔待機重試，切片安全保留在本地 DB', e);
@@ -3193,6 +3546,9 @@
           this.secondsElapsed = 0;
           this.currentSliceStartSec = 0;
           this.recordStartTime = Date.now();
+          if (!this.sessionStartTimestamp) {
+            this.sessionStartTimestamp = this.formatTimestamp(new Date());
+          }
           this.isRecording = true;
 
           this.startNewSliceRecorder(0);
@@ -3212,6 +3568,7 @@
           // 2. 啟動 Web Worker 定時器（不受瀏覽器背景休眠降速限制）
           this.initWorkerTimer();
           this.workerTimer.postMessage('start');
+          this.setStepGuide('錄音中（每 30 秒自動建檔至雲端）→ 結束請點擊停止按鈕');
 
           Toast.show('已啟動錄音！每 30 秒自動建檔，背景/手機滑開不中斷');
         } catch (err) {
@@ -3244,8 +3601,9 @@
         this.releaseWakeLock();
 
         const statusEl = document.getElementById('audio-slice-status');
-        if (statusEl) statusEl.textContent = '錄音已結束。音檔已完成建檔，請點擊「AI 解析逐字稿」執行解析';
-        Toast.show('錄音已結束，音檔已存檔完成！請點擊「AI 解析逐字稿」');
+        if (statusEl) statusEl.textContent = '音檔已完成建檔，請點擊處理器圖標執行解析';
+        this.setStepGuide('步驟 2：點擊處理器圖標開始 AI 聽打解析');
+        Toast.show('錄音已結束，請點擊處理器圖標執行聽打解析');
       },
 
       // 【核心升級】按一下按鈕才「一個一個 30 秒檔案」依序做語音解析然後寫入逐字稿
@@ -3312,8 +3670,9 @@
             Toast.show(`【第 ${sliceIdx} 片段】(${timeRange}) 解析完成並已寫入欄位！`);
           }
 
-          if (statusEl) statusEl.textContent = '所有音訊切片已全數完成 AI 解析與試算表同步！';
-          Toast.show('所有音訊切片已全數解析完畢！');
+          if (statusEl) statusEl.textContent = '解析完成，可確認內容後點擊儲存歸檔';
+          this.setStepGuide('步驟 3：檢視或補齊四欄內容，完成後點擊儲存歸檔');
+          Toast.show('所有音訊切片已全數解析完畢');
         } catch (err) {
           Toast.show('解析過程發生錯誤: ' + err.message, 'error');
         } finally {
@@ -5314,7 +5673,11 @@
         const sel = document.getElementById('select-active-project');
         if (sel) {
           sel.addEventListener('change', async (e) => {
-            const selectedVal = e.target.value; if (!selectedVal) return;
+            const selectedVal = e.target.value;
+            if (!selectedVal) {
+              AppMode.resetWorkspace();
+              return;
+            }
             const selectedOpt = e.target.options[e.target.selectedIndex];
             
             // 若選擇的是未開案的「新客戶進線」，立即觸發自動開案並載入
@@ -5348,17 +5711,21 @@
                 StateStore.state.contractorOcrItems = res.costs || []; 
                 StateStore.state.contractorInquiries = res.contractorInquiries || [];
                 StateStore.state.vendorBindings = res.vendorBindings || [];
+                StateStore.state.audioHistory = res.audioHistory || [];
+                AudioManager.sessionClips = [];
+                AudioManager.renderClipsAccordion();
+                AudioManager.renderHistoryAccordion();
                 if (res.projects) {
                   const currentProjectData = res.projects.find(p => String(p.projectId) === String(selectedProjectId));
                   if (currentProjectData) {
-                    // 確保丈量頁 4 大輸入框即刻灌入實質資料，並將逐字稿內的雲端網址渲染為可點擊超連結
-                    AudioManager.setTranscriptValue(currentProjectData.transcript || '');
+                    // 已儲存的紀錄統一於下方歷史紀錄區查閱與編輯，上方四欄載入時永遠維持空白待機
+                    AudioManager.setTranscriptValue('');
                     const nEl = document.getElementById('live-notes');
-                    if (nEl) nEl.value = currentProjectData.notes || '';
+                    if (nEl) nEl.value = '';
                     const sEl = document.getElementById('box-summary');
-                    if (sEl) sEl.value = currentProjectData.summary || '';
+                    if (sEl) sEl.value = '';
                     const wEl = document.getElementById('box-warning');
-                    if (wEl) wEl.value = currentProjectData.warning || '';
+                    if (wEl) wEl.value = '';
 
                     // 100% 採用後端試算表真實資料，若無則嚴格保持空字串
                     let safeName = String(currentProjectData.name || '').trim();
@@ -5421,9 +5788,13 @@
                   const inD = document.getElementById('profit-input-discount'); if(inD) inD.value = 0;
                   const inF = document.getElementById('profit-input-fee'); if(inF) inF.value = 8;
                 }
+                SaveStatus.setSaved('專案已載入同步');
                 Toast.show('載入完成');
               }
-            } catch (err) { Toast.show('載入失敗', 'error'); }
+            } catch (err) {
+              SaveStatus.setError('專案載入失敗');
+              Toast.show('載入失敗', 'error');
+            }
           });
         }
       }
@@ -5483,24 +5854,61 @@
             }
             sel.innerHTML = html;
             
-            // [精準切換] 若有 targetProjectId 就強制切換，沒有才預設抓第一個
+            // 僅當指定 targetProjectId（例如剛按下 + 新建專案）才自動載入；否則預設維持全新無資料
             if (targetProjectId) {
               sel.value = targetProjectId;
               sel.dispatchEvent(new Event('change'));
-            } else if (res.projects && res.projects.length > 0) {
-              sel.value = res.projects[0].projectId;
-              sel.dispatchEvent(new Event('change'));
             } else {
-              Toast.show('請由上方選擇「新進線客戶」以展開丈量作業', 'info');
+              sel.value = '';
+              this.resetWorkspace();
             }
           } else {
-            DesignManager.addNewRecord();
+            this.resetWorkspace();
           }
         } catch (err) {
+          SaveStatus.setError('清單初始化失敗');
           Toast.show('無法載入專案清單: ' + err.message, 'error');
         }
+      },
+      resetWorkspace() {
+        StateStore.state.activeProject = '';
+        StateStore.state.contractorOcrItems = [];
+        StateStore.state.contractorInquiries = [];
+        StateStore.state.quotationDraftItems = [];
+        StateStore.state.quotationTableItems = [];
+        StateStore.state.interviewRecords = [];
+        StateStore.state.audioHistory = [];
+        StateStore.state.activeRecordIdx = 0;
+        AudioManager.sessionClips = [];
+        AudioManager.renderClipsAccordion();
+        AudioManager.renderHistoryAccordion();
+
+        AudioManager.setTranscriptValue('');
+        ['live-notes', 'box-summary', 'box-warning', 'legal-project-name', 'legal-client-id', 'legal-project-address', 'legal-design-area', 'legal-discount-name', 'legal-constr-override', 'legal-start-date', 'legal-end-date'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        const inD = document.getElementById('profit-input-discount'); if (inD) inD.value = 0;
+        const inF = document.getElementById('profit-input-fee'); if (inF) inF.value = 8;
+        const tc = document.getElementById('val-total-cost'); if (tc) tc.textContent = '$0';
+        const qt = document.getElementById('val-quote-total'); if (qt) qt.textContent = '$0';
+        const mr = document.getElementById('val-margin-rate'); if (mr) mr.textContent = '0%';
+        const fp = document.getElementById('val-final-payable'); if (fp) fp.textContent = '---';
+
+        DesignManager.renderRecordsList();
+        DesignManager.renderMaterialsTable();
+        CostManager.init();
+        QuoteManager.init();
+        LegalManager.renderA4Preview();
+        SaveStatus.setIdle('尚未選擇專案（全新空白）');
       }
     };
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-audio-accordion="true"]')) {
+        AudioManager.collapseAllAccordions();
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
       Toast.init(); ViewSwitcher.init(); AppMode.fetchAndInit(); LegalManager.renderStagesConfig(); RedrawIcons();
