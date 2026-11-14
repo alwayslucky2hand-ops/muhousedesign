@@ -833,7 +833,16 @@
   <main class="app-main">
     
     
-    <div class="toolbar">
+    <div class="toolbar" style="flex-wrap:wrap; justify-content:space-between;">
+      
+      <div id="global-save-status" style="display:inline-flex; align-items:center; gap:10px; padding:6px 14px; border:1px solid var(--line-light); background:#FFFFFF; font-size:0.82rem; color:var(--text-secondary); min-height:36px; position:relative; overflow:hidden;">
+        <span id="global-save-dot" style="width:7px; height:7px; border-radius:50%; background:#999999; flex-shrink:0;"></span>
+        <span id="global-save-text" style="white-space:nowrap;">等待選擇專案</span>
+        <span id="global-save-pct" style="font-family:'Inter',sans-serif; font-weight:600; color:#111111; display:none;">0%</span>
+        <div id="global-save-bar" style="position:absolute; left:0; bottom:0; height:2px; width:0%; background:#111111; transition:width 0.25s ease;"></div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px;">
       
       <button class="pill btn-icon-only" style="border-color: var(--line-dark); color: var(--text-primary);" onclick="AppMode.setNewMode()" title="新建專案">
         <i data-lucide="plus" style="width:18px;"></i>
@@ -845,6 +854,7 @@
       <select id="select-active-project" class="select-minimal">
         <option value="">選擇專案...</option>
       </select>
+      </div>
     </div>
 
     <section class="app-view">
@@ -927,7 +937,7 @@
                 </div>
                 <button class="btn btn-icon-only" style="min-height:32px;" onclick="AudioManager.syncEditorToTextarea(); ProjectManager.saveTextField('transcript', 'live-transcript')" title="儲存逐字稿"><i data-lucide="save"></i></button>
               </div>
-              <div id="live-transcript-editor" class="spec-input" contenteditable="true" style="border:none; min-height:220px; max-height:520px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.75;" oninput="AudioManager.syncEditorToTextarea()" onblur="AudioManager.syncEditorToTextarea()"></div>
+              <div id="live-transcript-editor" class="spec-input" contenteditable="true" style="border:none; min-height:220px; max-height:520px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.75;" oninput="AudioManager.syncEditorToTextarea(); Debouncer.run('save_transcript', () =&gt; ProjectManager.saveTextField('transcript', 'live-transcript', true), 1500, '逐字稿')" onblur="AudioManager.syncEditorToTextarea(); Debouncer.flush('save_transcript')"></div>
               <textarea id="live-transcript" class="spec-input" style="display:none;"></textarea>
             </div>
             
@@ -936,7 +946,7 @@
                 <h3>注記</h3>
                 <button class="btn btn-icon-only" style="min-height:32px;" onclick="ProjectManager.saveTextField('notes', 'live-notes')" title="儲存注記"><i data-lucide="save"></i></button>
               </div>
-              <textarea id="live-notes" class="spec-input" style="border:none; min-height:120px;"></textarea>
+              <textarea id="live-notes" class="spec-input" style="border:none; min-height:120px;" oninput="Debouncer.run('save_notes', () => ProjectManager.saveTextField('notes', 'live-notes', true), 1200, '現場注記')" onblur="Debouncer.flush('save_notes')"></textarea>
             </div>
           </div>
 
@@ -951,14 +961,14 @@
                   <label class="input-field-label">專案總結</label>
                   <button class="btn btn-icon-only" style="min-height:26px; border:none;" onclick="ProjectManager.saveTextField('summary', 'box-summary')" title="儲存總結"><i data-lucide="save" style="width:16px;"></i></button>
                 </div>
-                <textarea id="box-summary" class="spec-input"></textarea>
+                <textarea id="box-summary" class="spec-input" oninput="Debouncer.run('save_summary', () => ProjectManager.saveTextField('summary', 'box-summary', true), 1200, '專案總結')" onblur="Debouncer.flush('save_summary')"></textarea>
               </div>
               <div class="input-field-group" style="margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <label class="input-field-label">防禦與注意</label>
                   <button class="btn btn-icon-only" style="min-height:26px; border:none;" onclick="ProjectManager.saveTextField('warning', 'box-warning')" title="儲存注意"><i data-lucide="save" style="width:16px;"></i></button>
                 </div>
-                <textarea id="box-warning" class="spec-input"></textarea>
+                <textarea id="box-warning" class="spec-input" oninput="Debouncer.run('save_warning', () => ProjectManager.saveTextField('warning', 'box-warning', true), 1200, '防禦與注意')" onblur="Debouncer.flush('save_warning')"></textarea>
               </div>
             </div>
           </div>
@@ -1363,14 +1373,87 @@
     };
 
     
+    const SaveStatus = {
+      setPending(label = '變更待儲存') {
+        const box = document.getElementById('global-save-status');
+        const dot = document.getElementById('global-save-dot');
+        const txt = document.getElementById('global-save-text');
+        const pct = document.getElementById('global-save-pct');
+        const bar = document.getElementById('global-save-bar');
+        if (!box) return;
+        box.style.borderColor = '#111111';
+        dot.style.background = '#d97706';
+        txt.textContent = `準備自動儲存：${label}...`;
+        pct.style.display = 'none';
+        bar.style.width = '25%';
+      },
+      setSaving(label = '儲存中', percent = 55) {
+        const box = document.getElementById('global-save-status');
+        const dot = document.getElementById('global-save-dot');
+        const txt = document.getElementById('global-save-text');
+        const pct = document.getElementById('global-save-pct');
+        const bar = document.getElementById('global-save-bar');
+        if (!box) return;
+        box.style.borderColor = '#111111';
+        dot.style.background = '#111111';
+        txt.textContent = `⏳ ${label}`;
+        pct.style.display = 'inline';
+        pct.textContent = `${Math.min(100, Math.max(0, Math.round(percent)))}%`;
+        bar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+      },
+      setSaved(label = '已自動儲存') {
+        const box = document.getElementById('global-save-status');
+        const dot = document.getElementById('global-save-dot');
+        const txt = document.getElementById('global-save-text');
+        const pct = document.getElementById('global-save-pct');
+        const bar = document.getElementById('global-save-bar');
+        if (!box) return;
+        const now = new Date().toTimeString().slice(0, 8);
+        box.style.borderColor = 'var(--line-light)';
+        dot.style.background = '#16a34a';
+        txt.textContent = `✓ ${label} (${now})`;
+        pct.style.display = 'none';
+        bar.style.width = '100%';
+        setTimeout(() => { if (bar.style.width === '100%') bar.style.width = '0%'; }, 1000);
+      },
+      setError(label = '儲存失敗，請重試') {
+        const box = document.getElementById('global-save-status');
+        const dot = document.getElementById('global-save-dot');
+        const txt = document.getElementById('global-save-text');
+        const pct = document.getElementById('global-save-pct');
+        const bar = document.getElementById('global-save-bar');
+        if (!box) return;
+        box.style.borderColor = '#ff4d4f';
+        dot.style.background = '#ff4d4f';
+        txt.textContent = `⚠️ ${label}`;
+        pct.style.display = 'none';
+        bar.style.width = '0%';
+      }
+    };
+
+    
     const Debouncer = {
       timers: {},
-      run(key, callback, delay = 1500) {
+      callbacks: {},
+      run(key, callback, delay = 1200, label = '資料') {
         if (this.timers[key]) clearTimeout(this.timers[key]);
+        this.callbacks[key] = callback;
+        SaveStatus.setPending(label);
         this.timers[key] = setTimeout(() => {
-          callback();
+          const fn = this.callbacks[key];
           delete this.timers[key];
+          delete this.callbacks[key];
+          if (fn) fn();
         }, delay);
+      },
+      async flush(key) {
+        if (this.timers[key]) {
+          clearTimeout(this.timers[key]);
+          delete this.timers[key];
+        }
+        const fn = this.callbacks[key];
+        delete this.callbacks[key];
+        if (fn) await fn();
       }
     };
 
@@ -1597,33 +1680,41 @@
       async silentSaveRecord(idx) {
         const projectId = StateStore.get('activeProject');
         const record = StateStore.state.interviewRecords[idx];
-        if(!projectId || !record) return;
-        
-        
+        if (!projectId || !record) return;
         if (record.images.some(img => typeof img === 'string' && img.startsWith('data:'))) return;
-        
+
+        SaveStatus.setSaving('自動儲存選材紀錄...', 55);
         try {
           const res = await ApiQueue.sendRequest('saveInterviewRecordsData', { projectId: projectId, record: record });
-          if(res && res.rowId) StateStore.state.interviewRecords[idx]._rowId = res.rowId;
-        } catch(err) { console.error(err); }
+          if (res && res.rowId) StateStore.state.interviewRecords[idx]._rowId = res.rowId;
+          SaveStatus.setSaved('選材紀錄已自動儲存');
+        } catch (err) {
+          SaveStatus.setError('選材自動儲存失敗');
+          console.error(err);
+        }
       },
 
       async manualSaveRecord(idx) {
         const projectId = StateStore.get('activeProject');
-        if(!projectId) return Toast.show('請先選擇專案', 'error');
-        
+        if (!projectId) return Toast.show('請先選擇專案', 'error');
+
         const record = StateStore.state.interviewRecords[idx];
         const hasBase64 = record.images.some(img => typeof img === 'string' && img.startsWith('data:'));
         if (hasBase64) {
           return Toast.show('檔案尚在背景上傳至雲端，請稍候再儲存', 'warning');
         }
 
+        SaveStatus.setSaving('儲存選材紀錄與清單...', 60);
         Toast.show('儲存中...', 'info');
         try {
           const res = await ApiQueue.sendRequest('saveInterviewRecordsData', { projectId: projectId, record: record });
-          if(res && res.rowId) StateStore.state.interviewRecords[idx]._rowId = res.rowId;
+          if (res && res.rowId) StateStore.state.interviewRecords[idx]._rowId = res.rowId;
+          SaveStatus.setSaved('選材紀錄已儲存');
           Toast.show('紀錄儲存成功');
-        } catch(err) { Toast.show('儲存失敗', 'error'); }
+        } catch (err) {
+          SaveStatus.setError('選材儲存失敗');
+          Toast.show('儲存失敗', 'error');
+        }
       },
 
       carouselGo(idx, dir) {
@@ -1834,9 +1925,13 @@
       removeMaterial(mIdx) {
         StateStore.state.interviewRecords[StateStore.state.activeRecordIdx].materials.splice(mIdx, 1);
         this.renderMaterialsTable();
+        Debouncer.run('saveRecord', () => this.silentSaveRecord(StateStore.state.activeRecordIdx), 600, '選材清單');
       },
 
-      async saveCurrentRecord() { this.manualSaveRecord(StateStore.state.activeRecordIdx); },
+      async saveCurrentRecord() {
+        await Debouncer.flush('saveRecord');
+        await this.manualSaveRecord(StateStore.state.activeRecordIdx);
+      },
 
       renderRecordsList() {
         const container = document.getElementById('design-records-container');
@@ -2410,6 +2505,10 @@
         }
 
         try {
+          SaveStatus.setSaving('1/3 自動儲存詢價紀錄...', 25);
+          await this.saveInquiries(true);
+
+          SaveStatus.setSaving('2/3 提煉成本工項中...', 60);
           const res = await ApiQueue.sendRequest('extractCostItemsFromText', {
             text: record.parsedResultText,
             contractor: record.contractor,
@@ -2431,9 +2530,10 @@
 
             StateStore.state.contractorOcrItems = StateStore.state.contractorOcrItems.concat(processedItems);
             this.renderCostTable();
-            this.saveAllCosts(true);
+            SaveStatus.setSaving('3/3 自動儲存專案成本庫...', 90);
+            await this.saveAllCosts(true);
             if (window.innerWidth < 1024) this.switchMobileTab('right');
-            Toast.show('✨ 成功提煉工項，已導入右側專案成本清單！');
+            Toast.show('✨ 已自動儲存並導入右側專案成本清單！');
           } else {
             Toast.show('無法提取具體工項', 'error');
           }
@@ -2507,17 +2607,43 @@
         Debouncer.run('saveCost', () => this.saveAllCosts(true));
       },
       removeCostItem(idx) { StateStore.state.contractorOcrItems.splice(idx, 1); this.renderCostTable(); Debouncer.run('saveCost', () => this.saveAllCosts(true)); Toast.show('成本已移除'); },
-      saveInquiries(silent = false) {
-        const pId = StateStore.get('activeProject'); if(!pId) return;
-        if(!silent) Toast.show('儲存中...', 'info');
-        ApiQueue.sendRequest('saveContractorInquiries', { projectId: pId, items: StateStore.state.contractorInquiries })
-          .then(() => { if(!silent) Toast.show('清單已儲存'); }).catch(() => { if(!silent) Toast.show('儲存失敗', 'error'); });
+      async saveInquiries(silent = false) {
+        const pId = StateStore.get('activeProject');
+        if (!pId) {
+          if (!silent) Toast.show('請先選擇專案', 'error');
+          return false;
+        }
+        SaveStatus.setSaving('儲存詢價紀錄...', 50);
+        if (!silent) Toast.show('儲存詢價紀錄中...', 'info');
+        try {
+          await ApiQueue.sendRequest('saveContractorInquiries', { projectId: pId, items: StateStore.state.contractorInquiries });
+          SaveStatus.setSaved('詢價紀錄已儲存');
+          if (!silent) Toast.show('詢價清單已儲存');
+          return true;
+        } catch (err) {
+          SaveStatus.setError('詢價儲存失敗');
+          if (!silent) Toast.show('儲存失敗: ' + err.message, 'error');
+          return false;
+        }
       },
-      saveAllCosts(silent = false) {
-        const pId = StateStore.get('activeProject'); if(!pId) return;
-        if(!silent) Toast.show('儲存中...', 'info');
-        ApiQueue.sendRequest('saveContractorCosts', { projectId: pId, items: StateStore.state.contractorOcrItems })
-          .then(() => { if(!silent) Toast.show('專案成本已成功寫入資料庫'); }).catch(() => { if(!silent) Toast.show('儲存失敗', 'error'); });
+      async saveAllCosts(silent = false) {
+        const pId = StateStore.get('activeProject');
+        if (!pId) {
+          if (!silent) Toast.show('請先選擇專案', 'error');
+          return false;
+        }
+        SaveStatus.setSaving('儲存成本清單...', 60);
+        if (!silent) Toast.show('儲存成本清單中...', 'info');
+        try {
+          await ApiQueue.sendRequest('saveContractorCosts', { projectId: pId, items: StateStore.state.contractorOcrItems });
+          SaveStatus.setSaved('成本清單已儲存');
+          if (!silent) Toast.show('專案成本已成功寫入資料庫');
+          return true;
+        } catch (err) {
+          SaveStatus.setError('成本儲存失敗');
+          if (!silent) Toast.show('儲存失敗: ' + err.message, 'error');
+          return false;
+        }
       },
       renderInquiries() {
         const container = document.getElementById('cost-inquiries-container');
@@ -2682,15 +2808,23 @@
 
     const ProjectManager = {
       submitNew() {},
-      async saveTextField(field, elementId) {
+      async saveTextField(field, elementId, silent = false) {
         const pId = StateStore.get('activeProject');
-        if (!pId) return Toast.show('請先選擇專案', 'error');
+        if (!pId) {
+          if (!silent) Toast.show('請先選擇專案', 'error');
+          return;
+        }
+        const labelMap = { transcript: '逐字稿', notes: '現場注記', summary: '專案總結', warning: '防禦與注意' };
+        const label = labelMap[field] || '文字欄位';
         const val = document.getElementById(elementId).value;
-        Toast.show('儲存中...', 'info');
+        SaveStatus.setSaving(`儲存${label}中...`, 50);
+        if (!silent) Toast.show(`正在儲存${label}...`, 'info');
         try {
           await ApiQueue.sendRequest('updateProjectText', { projectId: pId, field: field, text: val });
-          Toast.show('儲存成功');
+          SaveStatus.setSaved(`${label}已儲存`);
+          if (!silent) Toast.show(`${label}儲存成功`);
         } catch (err) {
+          SaveStatus.setError(`${label}儲存失敗`);
           Toast.show('儲存失敗: ' + err.message, 'error');
         }
       },
