@@ -957,6 +957,9 @@
                 <h3>注記</h3>
               </div>
               <textarea id="live-notes" class="spec-input" style="border:none; min-height:130px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_notes', () => ProjectManager.saveTextField('notes', 'live-notes', true), 600, '現場注記')" onblur="Debouncer.flush('save_notes')"></textarea>
+              <button class="btn btn-primary btn-icon-only" style="width:100%; margin-top:16px;" onclick="AudioManager.archiveCurrentSession()" title="歸檔至歷史紀錄">
+                <i data-lucide="archive" style="width:18px; height:18px;"></i>
+              </button>
             </div>
           </div>
 
