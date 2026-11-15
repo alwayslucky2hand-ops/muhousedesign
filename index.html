@@ -504,6 +504,65 @@
         white-space: normal !important;
         word-break: break-word;
       }
+
+       
+      input[type="date"].spec-input {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        display: block !important;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+       
+      .auto-grow-wrap::after,
+      .auto-grow-wrap.remarks-wrap::after {
+        font-size: 16px !important;
+        line-height: 1.55 !important;
+        padding: 6px 8px !important;
+      }
+      .material-table textarea.table-auto-text,
+      .material-table textarea.table-remarks-input {
+        line-height: 1.55 !important;
+        padding: 6px 8px !important;
+      }
+
+       
+      .material-table {
+        min-width: 780px !important;
+      }
+
+       
+      #legal-stages-config-box {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 14px 12px !important;
+      }
+      .legal-stage-pill {
+        width: 100% !important;
+        justify-content: space-between !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+      }
+      .legal-stage-pill-name {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        font-size: 16px !important;
+      }
+      .legal-stage-pill-pct {
+        width: 58px !important;
+        flex-shrink: 0 !important;
+        font-size: 16px !important;
+      }
+      #legal-stage-total-indicator {
+        margin-left: 0 !important;
+        text-align: right;
+        padding-top: 4px;
+      }
     }
 
      
@@ -2360,11 +2419,12 @@
 
     const AxisScrollLock = {
       init() {
-        let activeEl = null, startX = 0, startY = 0, startLeft = 0, startTop = 0, lock = null;
+        let activeEl = null, startX = 0, startY = 0, startLeft = 0, startTop = 0, lock = null, lockTimer = null;
         document.addEventListener('touchstart', (e) => {
-          if (e.touches.length !== 1) { activeEl = null; return; }
+          if (lockTimer) { clearTimeout(lockTimer); lockTimer = null; }
+          if (e.touches.length !== 1) { activeEl = null; lock = null; return; }
           const wrap = e.target.closest('.material-table-wrapper');
-          if (!wrap) { activeEl = null; return; }
+          if (!wrap) { activeEl = null; lock = null; return; }
           activeEl = wrap;
           startX = e.touches[0].clientX;
           startY = e.touches[0].clientY;
@@ -2377,25 +2437,28 @@
           if (!activeEl || e.touches.length !== 1) return;
           const dx = e.touches[0].clientX - startX;
           const dy = e.touches[0].clientY - startY;
-          if (!lock && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+          if (!lock && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
             lock = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
           }
-          if (lock === 'x') {
-            if (e.cancelable) e.preventDefault();
-            activeEl.scrollLeft = startLeft - dx;
+          if (lock === 'x' && activeEl.scrollTop !== startTop) {
             activeEl.scrollTop = startTop;
-          } else if (lock === 'y') {
+          } else if (lock === 'y' && activeEl.scrollLeft !== startLeft) {
             activeEl.scrollLeft = startLeft;
-            if (activeEl.scrollHeight > activeEl.clientHeight + 2) {
-              if (e.cancelable) e.preventDefault();
-              activeEl.scrollTop = startTop - dy;
-            }
           }
-        }, { passive: false });
+        }, { passive: true });
 
-        const reset = () => { activeEl = null; lock = null; };
-        document.addEventListener('touchend', reset, { passive: true });
-        document.addEventListener('touchcancel', reset, { passive: true });
+        document.addEventListener('scroll', (e) => {
+          if (!activeEl || !lock || e.target !== activeEl) return;
+          if (lock === 'x' && activeEl.scrollTop !== startTop) activeEl.scrollTop = startTop;
+          if (lock === 'y' && activeEl.scrollLeft !== startLeft) activeEl.scrollLeft = startLeft;
+        }, true);
+
+        const release = () => {
+          if (!activeEl) return;
+          lockTimer = setTimeout(() => { activeEl = null; lock = null; }, 450);
+        };
+        document.addEventListener('touchend', release, { passive: true });
+        document.addEventListener('touchcancel', release, { passive: true });
       }
     };
     document.addEventListener('DOMContentLoaded', () => AxisScrollLock.init());
@@ -3792,7 +3855,7 @@
           total += subtotal;
           return `<tr>
               <td style="color:var(--text-muted);">${idx + 1}</td>
-              <td><input type="text" value="${m.category||''}" autocomplete="off" onfocus="CategoryCombo.open(this, val => { CostManager.updateCostItem(${idx},'category',val); })" oninput="CategoryCombo.filter(this)" onblur="CategoryCombo.scheduleClose(); CategoryCombo.record(this.value); CostManager.updateCostItem(${idx},'category',this.value);"></td>
+              <td><div class="auto-grow-wrap" data-replicated-value="${AudioManager.escapeHtml(m.category||'')}"><textarea rows="1" class="table-auto-text" autocomplete="off" onfocus="CategoryCombo.open(this, val => { this.parentNode.dataset.replicatedValue = val; CostManager.updateCostItem(${idx},'category',val); })" oninput="this.parentNode.dataset.replicatedValue = this.value; CategoryCombo.filter(this)" onblur="CategoryCombo.scheduleClose(); CategoryCombo.record(this.value); CostManager.updateCostItem(${idx},'category',this.value);">${AudioManager.escapeHtml(m.category||'')}</textarea></div></td>
               <td><div class="auto-grow-wrap" data-replicated-value="${AudioManager.escapeHtml(m.contractorName||'')}"><textarea rows="1" class="table-auto-text" oninput="this.parentNode.dataset.replicatedValue = this.value" onblur="CostManager.updateCostItem(${idx},'contractorName',this.value)">${AudioManager.escapeHtml(m.contractorName||'')}</textarea></div></td>
               <td><div class="auto-grow-wrap" data-replicated-value="${AudioManager.escapeHtml(m.itemName||'')}"><textarea rows="1" class="table-auto-text" oninput="this.parentNode.dataset.replicatedValue = this.value" onblur="CostManager.updateCostItem(${idx},'itemName',this.value)">${AudioManager.escapeHtml(m.itemName||'')}</textarea></div></td>
               <td><input type="number" value="${qty}" onblur="CostManager.updateCostItem(${idx},'quantity',this.value)"></td>
@@ -5433,7 +5496,9 @@
               <div class="auto-grow-wrap" data-replicated-value="${AudioManager.escapeHtml(m.spaceName || '')}">
                 <textarea rows="1" class="table-auto-text" style="font-weight:600;" oninput="this.parentNode.dataset.replicatedValue = this.value" onblur="QuoteManager.updateTableItem(${idx},'spaceName',this.value)">${AudioManager.escapeHtml(m.spaceName || '')}</textarea>
               </div>
-              <input type="text" value="${m.category || ''}" placeholder="工種分類..." autocomplete="off" style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;" onfocus="CategoryCombo.open(this, val => { QuoteManager.updateTableItem(${idx},'category',val); })" oninput="CategoryCombo.filter(this)" onblur="CategoryCombo.scheduleClose(); CategoryCombo.record(this.value); QuoteManager.updateTableItem(${idx},'category',this.value);">
+              <div class="auto-grow-wrap remarks-wrap" data-replicated-value="${AudioManager.escapeHtml(m.category || '')}">
+                <textarea rows="1" class="table-remarks-input" placeholder="工種分類..." autocomplete="off" style="color:var(--text-secondary);" onfocus="CategoryCombo.open(this, val => { this.parentNode.dataset.replicatedValue = val; QuoteManager.updateTableItem(${idx},'category',val); })" oninput="this.parentNode.dataset.replicatedValue = this.value; CategoryCombo.filter(this)" onblur="CategoryCombo.scheduleClose(); CategoryCombo.record(this.value); QuoteManager.updateTableItem(${idx},'category',this.value);">${AudioManager.escapeHtml(m.category || '')}</textarea>
+              </div>
             </td>
             <td>
               <div class="auto-grow-wrap" data-replicated-value="${AudioManager.escapeHtml(m.itemName || '')}">
@@ -6283,10 +6348,12 @@
           container.innerHTML = `
             <div style="font-size:0.82rem; font-weight:600; color:var(--text-secondary); margin-right:8px;">期數配置：</div>
             ${this.stages.map((s, idx) => `
-              <div style="display:inline-flex; align-items:center; background:#FFFFFF; border:1px solid var(--line-dark); padding:4px 8px; gap:4px; font-size:0.82rem;">
-                <input type="text" value="${s.name}" style="border:none; width:72px; font-size:0.8rem; font-family:'Noto Sans TC', sans-serif; outline:none; background:transparent;" onchange="LegalManager.updateStageName(${idx}, this.value)" title="期數名稱">
-                <input type="number" value="${s.pct}" style="border:none; border-bottom:1px solid var(--line-light); width:40px; text-align:right; font-family:'Inter', sans-serif; font-size:0.85rem; font-weight:600; outline:none; background:transparent;" oninput="LegalManager.updateStagePct(${idx}, this.value)">
-                <span>%</span>
+              <div class="legal-stage-pill" style="display:inline-flex; align-items:center; background:#FFFFFF; border:1px solid var(--line-dark); padding:4px 8px; gap:4px; font-size:0.82rem;">
+                <input type="text" class="legal-stage-pill-name" value="${s.name}" style="border:none; width:96px; font-size:0.82rem; font-family:'Noto Sans TC', sans-serif; outline:none; background:transparent;" onchange="LegalManager.updateStageName(${idx}, this.value)" title="期數名稱">
+                <span style="display:inline-flex; align-items:center; gap:2px; flex-shrink:0;">
+                  <input type="number" class="legal-stage-pill-pct" value="${s.pct}" style="border:none; border-bottom:1px solid var(--line-light); width:44px; text-align:right; font-family:'Inter', sans-serif; font-size:0.85rem; font-weight:600; outline:none; background:transparent;" oninput="LegalManager.updateStagePct(${idx}, this.value)">
+                  <span>%</span>
+                </span>
               </div>
             `).join('')}
             <div id="legal-stage-total-indicator" style="font-size:0.82rem; font-weight:600; font-family:'Inter', sans-serif; margin-left:auto; color:${is100 ? '#111111' : '#ff4d4f'};">
