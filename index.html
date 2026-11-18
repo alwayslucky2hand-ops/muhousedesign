@@ -1237,12 +1237,12 @@
       <div id="project-info-body" class="project-info-body">
         <div class="project-info-grid">
           <div class="project-info-field">
-            <label>案件編號</label>
-            <input type="text" id="proj-info-id" class="spec-input" placeholder="填寫右側任一欄位後自動建檔" readonly>
-          </div>
-          <div class="project-info-field">
             <label>進線編號</label>
             <input type="text" id="proj-info-inquiry-id" class="spec-input" placeholder="請輸入進線編號" oninput="ProjectInfoPanel.onFieldInput(false)" onblur="ProjectInfoPanel.onFieldInput(true)">
+          </div>
+          <div class="project-info-field">
+            <label>案場名稱</label>
+            <input type="text" id="proj-info-site-name" class="spec-input" placeholder="請輸入案場名稱" oninput="ProjectInfoPanel.onFieldInput(false)" onblur="ProjectInfoPanel.onFieldInput(true)">
           </div>
           <div class="project-info-field">
             <label>客戶名稱</label>
@@ -1695,6 +1695,10 @@
 
             <div style="display: flex; flex-wrap: wrap; gap: 20px;">
               <div class="input-field-group" style="flex: 1.2; min-width: 220px; margin-bottom:0;">
+                <label class="input-field-label">案場名稱（封面與合約案名）</label>
+                <input type="text" id="legal-site-name" class="spec-input" placeholder="請輸入案場名稱" value="" oninput="LegalManager.renderA4Preview()">
+              </div>
+              <div class="input-field-group" style="flex: 1.2; min-width: 220px; margin-bottom:0;">
                 <label class="input-field-label">客戶姓名（甲方顯示名稱）</label>
                 <input type="text" id="legal-project-name" class="spec-input" placeholder="請輸入客戶姓名" value="" oninput="LegalManager.renderA4Preview()">
               </div>
@@ -1969,8 +1973,8 @@
     
     const StateStore = {
       state: { 
-        activeProject: '', clientName: '',
-        projectMaster: { projectId: '', inquiryId: '', name: '', phone: '', address: '', type: '' },
+        activeProject: '', clientName: '', siteName: '',
+        projectMaster: { projectId: '', inquiryId: '', siteName: '', name: '', phone: '', address: '', type: '' },
         audioQueue: [], audioHistory: [], contractorOcrItems: [], contractorInquiries: [],
         vendorBindings: [],
         categoryHistory: [], deletedCategories: [],
@@ -3894,13 +3898,14 @@
 
       openNewDraft() {
         const acc = document.getElementById('project-info-accordion');
-        const blank = { projectId: '', inquiryId: '', name: '', phone: '', address: '', type: '' };
+        const blank = { projectId: '', inquiryId: '', siteName: '', name: '', phone: '', address: '', type: '' };
         StateStore.state.projectMaster = blank;
+        StateStore.state.siteName = '';
         StateStore.state.clientName = '';
 
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-        setVal('proj-info-id', '');
         setVal('proj-info-inquiry-id', '');
+        setVal('proj-info-site-name', '');
         setVal('proj-info-name', '');
         setVal('proj-info-phone', '');
         setVal('proj-info-address', '');
@@ -3912,8 +3917,8 @@
         this.setOpen(true);
         SaveStatus.setIdle('新建專案（填寫後自動建檔）');
         setTimeout(() => {
-          const nameInput = document.getElementById('proj-info-name');
-          if (nameInput) nameInput.focus();
+          const siteInput = document.getElementById('proj-info-site-name');
+          if (siteInput) siteInput.focus();
         }, 60);
       },
 
@@ -3922,25 +3927,28 @@
         if (!proj || !proj.projectId) {
           if (acc) acc.style.display = 'none';
           this.setOpen(false);
+          StateStore.state.siteName = '';
           StateStore.state.clientName = '';
-          StateStore.state.projectMaster = { projectId: '', inquiryId: '', name: '', phone: '', address: '', type: '' };
+          StateStore.state.projectMaster = { projectId: '', inquiryId: '', siteName: '', name: '', phone: '', address: '', type: '' };
           this._lastSnapshot = '';
           return;
         }
         const clean = {
           projectId: String(proj.projectId || '').trim(),
           inquiryId: String(proj.inquiryId || '').trim(),
+          siteName: String(proj.siteName || '').trim(),
           name: String(proj.name || '').trim(),
           phone: String(proj.phone || '').trim(),
           address: String(proj.address || '').trim(),
           type: String(proj.type || '').trim()
         };
         StateStore.state.projectMaster = clean;
+        StateStore.state.siteName = clean.siteName;
         StateStore.state.clientName = clean.name;
 
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-        setVal('proj-info-id', clean.projectId);
         setVal('proj-info-inquiry-id', clean.inquiryId);
+        setVal('proj-info-site-name', clean.siteName);
         setVal('proj-info-name', clean.name);
         setVal('proj-info-phone', clean.phone);
         setVal('proj-info-address', clean.address);
@@ -3956,15 +3964,19 @@
         const nameEl = document.getElementById('proj-info-summary-name');
         const typeEl = document.getElementById('proj-info-summary-type');
         if (idEl) idEl.textContent = info.projectId || '新建中';
-        if (nameEl) nameEl.textContent = info.name || '請填寫客戶名稱';
+        const titleLabel = (info.siteName && info.name)
+          ? `${info.siteName}（${info.name}）`
+          : (info.siteName || info.name || '請填寫案場與客戶名稱');
+        if (nameEl) nameEl.textContent = titleLabel;
         if (typeEl) typeEl.textContent = info.type ? `｜${info.type}` : '';
       },
 
       readForm() {
         const getV = (id) => String(document.getElementById(id)?.value || '').trim();
         return {
-          projectId: getV('proj-info-id') || StateStore.get('activeProject'),
+          projectId: StateStore.get('activeProject') || '',
           inquiryId: getV('proj-info-inquiry-id'),
+          siteName: getV('proj-info-site-name'),
           name: getV('proj-info-name'),
           phone: getV('proj-info-phone'),
           address: getV('proj-info-address'),
@@ -3979,12 +3991,13 @@
         if (snap === this._lastSnapshot && !Debouncer.timers['save_project_master']) return;
 
         // 尚未建檔且所有欄位皆為空時不觸發建檔
-        const hasAnyContent = Boolean(info.inquiryId || info.name || info.phone || info.address || info.type);
+        const hasAnyContent = Boolean(info.inquiryId || info.siteName || info.name || info.phone || info.address || info.type);
         if (!pId && !hasAnyContent) return;
 
         this._lastSnapshot = snap;
         SyncEngine.markInput();
         StateStore.state.projectMaster = info;
+        StateStore.state.siteName = info.siteName;
         StateStore.state.clientName = info.name;
         this.updateSummaryBar(info);
 
@@ -3993,11 +4006,14 @@
         if (sel && pId) {
           const opt = Array.from(sel.options).find(o => o.value === pId);
           if (opt) {
-            opt.textContent = `${pId} - ${info.name || '未填寫姓名'} - ${info.type || '未填寫類型'}`;
+            const labelName = info.siteName || info.name || '未填寫名稱';
+            opt.textContent = `${pId} - ${labelName} - ${info.type || '未填寫類型'}`;
           }
         }
 
-        // 樂觀 UI：即時連動法務頁客戶姓名、地址與毛利頁 A4 預覽
+        // 樂觀 UI：即時連動法務頁案場名稱、客戶姓名、地址與毛利頁 A4 預覽
+        const legalSiteEl = document.getElementById('legal-site-name');
+        if (legalSiteEl) legalSiteEl.value = info.siteName;
         const legalNameEl = document.getElementById('legal-project-name');
         if (legalNameEl) legalNameEl.value = info.name;
         const legalAddrEl = document.getElementById('legal-project-address');
@@ -4029,13 +4045,14 @@
       async createOrSyncNewProject() {
         if (this._isCreating || StateStore.get('activeProject')) return;
         const info = this.readForm();
-        if (!(info.inquiryId || info.name || info.phone || info.address || info.type)) return;
+        if (!(info.inquiryId || info.siteName || info.name || info.phone || info.address || info.type)) return;
 
         this._isCreating = true;
         SaveStatus.setSaving('自動建立新專案並寫入試算表...', 50);
         try {
           const createRes = await ApiQueue.sendRequest('createProjectMaster', {
             inquiryId: info.inquiryId,
+            siteName: info.siteName,
             clientName: info.name,
             phone: info.phone,
             address: info.address,
@@ -4045,8 +4062,6 @@
           if (createRes && createRes.projectId) {
             const newId = createRes.projectId;
             StateStore.state.activeProject = newId;
-            const idInput = document.getElementById('proj-info-id');
-            if (idInput) idInput.value = newId;
 
             const latestInfo = this.readForm();
             latestInfo.projectId = newId;
@@ -4064,7 +4079,8 @@
               }
               const opt = document.createElement('option');
               opt.value = newId;
-              opt.textContent = `${newId} - ${latestInfo.name || '未填寫姓名'} - ${latestInfo.type || '未填寫類型'}`;
+              const labelName = latestInfo.siteName || latestInfo.name || '未填寫名稱';
+              opt.textContent = `${newId} - ${labelName} - ${latestInfo.type || '未填寫類型'}`;
               group.appendChild(opt);
               sel.value = newId;
             }
@@ -6274,6 +6290,7 @@
         const pId = StateStore.get('activeProject');
         if (!pId) return;
         const draft = {
+          siteName: document.getElementById('legal-site-name')?.value || '',
           projectName: document.getElementById('legal-project-name')?.value || '',
           clientId: document.getElementById('legal-client-id')?.value || '',
           address: document.getElementById('legal-project-address')?.value || '',
@@ -6299,6 +6316,7 @@
       applyLoadedDraft(draft) {
         if (!draft) return;
         const map = {
+          'legal-site-name': draft.siteName,
           'legal-project-name': draft.projectName,
           'legal-client-id': draft.clientId,
           'legal-project-address': draft.address,
@@ -6446,7 +6464,10 @@
         };
 
         const fallbackClient = String(StateStore.get('clientName') || document.getElementById('proj-info-name')?.value || '').trim();
-        const projectName = getCleanStr('legal-project-name', fallbackClient || '尚未填寫客戶姓名');
+        const clientName = getCleanStr('legal-project-name', fallbackClient || '尚未填寫客戶姓名');
+        const fallbackSite = String(StateStore.get('siteName') || document.getElementById('proj-info-site-name')?.value || '').trim();
+        const siteName = getCleanStr('legal-site-name', fallbackSite || '未命名案場');
+        const projectName = clientName;
         const clientId = getCleanStr('legal-client-id', '');
         const address = getCleanStr('legal-project-address', '');
 
@@ -6524,7 +6545,7 @@
         const endROC = parseROC(endDate);
 
         return {
-          pId, projectName, clientId, address, designArea, designUnitPrice,
+          pId, siteName, clientName, projectName, clientId, address, designArea, designUnitPrice,
           discountName, discountAmount, designTotal, calculatedDesignStages, designStage1, designStage2,
           finalPayable, calculatedStages, constrStage1, constrStage2, constrStage3, constrStage4, constrStage5,
           startDate, endDate, startROC, endROC
@@ -6541,7 +6562,7 @@
               <div class="a4-cover-page">
                 <img src="https://drive.google.com/thumbnail?id=1oQ6yFAMzJCBoGG_KFpbkbLVcIe61ASv9&sz=w1000" alt="暮川設計 LOGO" class="cover-emblem-badge" style="object-fit:contain; border:none; padding:0; background:transparent;">
                 <div class="cover-mid-project-block">
-                  <div class="cover-mid-project-title">${p.projectName || '未命名專案'}</div>
+                  <div class="cover-mid-project-title">${p.siteName || '未命名案場'}</div>
                   <div class="cover-mid-line"></div>
                 </div>
                 <div class="cover-bottom-block">
@@ -6568,13 +6589,13 @@
                   <h2 style="text-align:center; font-family:'Noto Serif TC', serif; font-size:1.55rem; letter-spacing:3px; margin-bottom:18px; padding-bottom:8px; border-bottom:1.5px solid #111;">室內設計承攬合約書</h2>
                   
                   <div style="font-size:0.92rem; line-height:1.9; margin-bottom:12px; text-align:justify;">
-                    立合約書人——— 委任人: <b>${p.projectName || '____________________'}</b> (以下簡稱甲方)<br>
+                    立合約書人——— 委任人: <b>${p.clientName || '____________________'}</b> (以下簡稱甲方)<br>
                     受任人: <b>暮川設計有限公司</b> (以下簡稱乙方)<br>
                     茲因甲方委託乙方室內設計製圖，經雙方同意訂立本合約，約定條款如下:
                   </div>
 
                   <div style="font-size:0.9rem; line-height:1.85; margin-bottom:14px; background:#FAFAFA; border:1px solid var(--line-light); padding:10px 14px;">
-                    <div><b>設計案名稱:</b> ${p.projectName ? p.projectName + ' 室內設計案' : ''}</div>
+                    <div><b>設計案名稱:</b> ${p.siteName ? p.siteName + ' 室內設計案' : ''}</div>
                     <div><b>設計案地點:</b> ${p.address || ''}</div>
                     <div><b>設計範圍:</b> 全室 ${p.designArea || 0} 坪設計扣除衛浴、廚房及陽台</div>
                   </div>
@@ -6765,7 +6786,7 @@
               <div class="a4-cover-page">
                 <img src="https://drive.google.com/thumbnail?id=1oQ6yFAMzJCBoGG_KFpbkbLVcIe61ASv9&sz=w1000" alt="暮川設計 LOGO" class="cover-emblem-badge" style="object-fit:contain; border:none; padding:0; background:transparent;">
                 <div class="cover-mid-project-block">
-                  <div class="cover-mid-project-title">${p.projectName || '未命名專案'}</div>
+                  <div class="cover-mid-project-title">${p.siteName || '未命名案場'}</div>
                   <div class="cover-mid-line"></div>
                 </div>
                 <div class="cover-bottom-block">
@@ -6819,14 +6840,14 @@
                   
                   <div style="font-size:0.9rem; line-height:1.85; margin-bottom:14px; text-align:justify;">
                     立契約書人—————<br>
-                    消費者(以下簡稱甲方): <b>${p.projectName || '____________________'}</b><br>
+                    消費者(以下簡稱甲方): <b>${p.clientName || '____________________'}</b><br>
                     業者(以下簡稱乙方): <b>暮川設計有限公司</b><br>
                     茲因甲方委託乙方辦理室內裝修工程,經雙方同意訂立本契約,約定條款如下:
                   </div>
 
                   <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第一條 工程案名稱</div>
                   <div style="font-size:0.88rem; line-height:1.75; margin-bottom:10px; padding-left:4px;">
-                    工程案名稱: ${p.projectName ? p.projectName + ' 裝修工程案' : '____________________ 裝修工程案'}
+                    工程案名稱: ${p.siteName ? p.siteName + ' 裝修工程案' : '____________________ 裝修工程案'}
                   </div>
 
                   <div class="a4-clause-title" style="font-size:1rem; margin-top:12px; margin-bottom:4px;">第二條 工程案地點</div>
@@ -7674,10 +7695,14 @@
                     if (wEl) wEl.value = '';
 
                     // 100% 採用後端試算表真實資料，若無則嚴格保持空字串
+                    let safeSite = String(currentProjectData.siteName || '').trim();
                     let safeName = String(currentProjectData.name || '').trim();
                     let safeAddr = String(currentProjectData.address || '').trim();
 
                     ProjectInfoPanel.hydrate(currentProjectData);
+
+                    const siteEl = document.getElementById('legal-site-name');
+                    if (siteEl) siteEl.value = safeSite;
 
                     const nameEl = document.getElementById('legal-project-name');
                     if (nameEl) nameEl.value = safeName;
@@ -7806,9 +7831,11 @@
             if (res.projects && res.projects.length > 0) {
               html += '<optgroup label="【進行中】工程專案">';
               res.projects.forEach(p => {
+                let cleanSite = String(p.siteName || '').trim();
                 let cleanName = String(p.name || '未填寫姓名').trim();
                 let cleanType = String(p.type || '未填寫類型').trim();
-                html += `<option value="${p.projectId}">${p.projectId} - ${cleanName} - ${cleanType}</option>`;
+                let labelName = cleanSite ? `${cleanSite} (${cleanName})` : cleanName;
+                html += `<option value="${p.projectId}">${p.projectId} - ${labelName} - ${cleanType}</option>`;
               });
               html += '</optgroup>';
             }
@@ -7845,7 +7872,7 @@
         AudioManager.renderHistoryAccordion();
 
         AudioManager.setTranscriptValue('');
-        ['live-notes', 'box-summary', 'box-warning', 'legal-project-name', 'legal-client-id', 'legal-project-address', 'legal-design-area', 'legal-discount-name', 'legal-constr-override', 'legal-start-date', 'legal-end-date'].forEach(id => {
+        ['live-notes', 'box-summary', 'box-warning', 'legal-site-name', 'legal-project-name', 'legal-client-id', 'legal-project-address', 'legal-design-area', 'legal-discount-name', 'legal-constr-override', 'legal-start-date', 'legal-end-date'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';
         });
