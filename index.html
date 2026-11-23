@@ -1309,90 +1309,39 @@
 
       
       <div id="tab-audio" class="tab-content-panel">
-        <div class="mobile-design-tabs">
-          <button class="mobile-tab-btn active" id="btn-audio-mobile-left" onclick="AudioManager.switchMobileTab('left')">錄音</button>
-          <button class="mobile-tab-btn" id="btn-audio-mobile-right" onclick="AudioManager.switchMobileTab('right')">分析</button>
-        </div>
-
-        <div id="audio-workspace-panel" class="view-grid-layout">
-          <div id="audio-panel-left" class="design-panel active">
-            <div style="border: 1px dashed var(--line-light); padding: 24px; text-align: center; margin-bottom: 24px; background:#FFF;">
-              <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;">
-                <button id="btn-record" class="btn btn-primary btn-icon-only" onclick="AudioManager.startRecord()" title="步驟 1：開始錄音"><i data-lucide="mic"></i></button>
-                <button id="btn-stop" class="btn btn-icon-only" onclick="AudioManager.stopRecord()" disabled title="步驟 2：停止錄音"><i data-lucide="square"></i></button>
-                <button id="btn-transcribe" class="btn btn-icon-only" onclick="AudioManager.transcribeAllChunks()" style="border-color:var(--line-dark);" title="步驟 3：AI 語音解析"><i data-lucide="cpu"></i></button>
-              </div>
-              <div id="audio-timer" style="font-size:2rem; font-family:'Inter', sans-serif; font-weight:300; margin-top:12px;">00:00</div>
-              <div id="audio-step-guide" style="font-size:0.82rem; color:var(--text-primary); margin-top:8px; font-weight:500;">步驟 1：點擊麥克風開始錄音（每 30 秒自動雲端建檔）</div>
-              <button id="btn-fake-sleep" class="btn" style="margin-top:14px; font-size:0.82rem; border-color:var(--line-dark); display:none;" onclick="AudioManager.enterFakeSleep()">
-                <i data-lucide="moon" style="width:15px; height:15px;"></i> 進入防誤觸黑屏省電模式（放口袋專用）
-              </button>
-
-              
-              <div id="audio-clips-wrapper" data-audio-accordion="true" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line-light); text-align:left;">
-                <div style="display:flex; justify-content:center;">
-                  <button id="btn-toggle-clips" class="btn" style="min-height:34px; padding:0 14px; border-color:var(--line-dark) !important; gap:8px;" onclick="AudioManager.toggleClipsAccordion()" title="展開/收合雲端已建檔音訊">
-                    <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
-                    <span id="audio-clips-count" style="font-family:'Inter',sans-serif; font-weight:600; font-size:0.85rem;">0</span>
-                    <i id="audio-clips-chevron" data-lucide="chevron-down" style="width:14px; height:14px;"></i>
-                  </button>
-                </div>
-                <div id="audio-clips-list" style="display:none; margin-top:12px; border:1px solid var(--line-light); background:#FAFAFA; padding:8px 12px;"></div>
-              </div>
-            </div>
-
-            
-            <div id="fake-sleep-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000000; z-index:99999; color:#444; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; -webkit-user-select:none;">
-              <div style="font-size:0.9rem; color:#555; margin-bottom:8px;">● 現場丈量持續收音中</div>
-              <div id="fake-sleep-timer" style="font-size:2.5rem; font-family:'Inter',sans-serif; color:#333; font-weight:300;">00:00</div>
-              <div style="font-size:0.75rem; color:#666; margin-top:30px; border:1px solid #333; padding:6px 14px; border-radius:20px;">長按螢幕 1.5 秒喚醒面板</div>
-            </div>
-            
-            <div class="quote-item-card">
-              <div class="item-card-header">
-                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                  <h3>逐字稿</h3>
-                  <span id="audio-slice-status" style="font-size:0.82rem; color:var(--text-secondary); font-weight:400;"></span>
-                </div>
-              </div>
-              <div id="live-transcript-editor" class="spec-input" contenteditable="true" style="border:none; min-height:220px; max-height:520px; overflow-y:auto; white-space:pre-wrap; word-break:break-word; line-height:1.75; font-size:0.95rem;" oninput="AudioManager.syncEditorToTextarea(); Debouncer.run('save_transcript', () =&gt; ProjectManager.saveTextField('transcript', 'live-transcript', true), 600, '逐字稿')" onblur="AudioManager.syncEditorToTextarea(); Debouncer.flush('save_transcript')"></div>
-              <textarea id="live-transcript" class="spec-input" style="display:none;"></textarea>
-            </div>
-            
-            <div class="quote-item-card">
-              <div class="item-card-header">
-                <h3>注記</h3>
-              </div>
-              <textarea id="live-notes" class="spec-input" style="border:none; min-height:130px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_notes', () => ProjectManager.saveTextField('notes', 'live-notes', true), 600, '現場注記')" onblur="Debouncer.flush('save_notes')"></textarea>
-              <button class="btn btn-primary btn-icon-only" style="width:100%; margin-top:16px;" onclick="AudioManager.archiveCurrentSession()" title="歸檔至歷史紀錄">
-                <i data-lucide="archive" style="width:18px; height:18px;"></i>
-              </button>
-            </div>
+        <div style="border: 1px dashed var(--line-light); padding: 28px 20px; text-align: center; margin-bottom: 24px; background:#FFF;">
+          <div style="display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap;">
+            <button id="btn-record" class="btn btn-primary btn-icon-only" onclick="AudioManager.toggleRecordOrPause()" title="開始錄音"><i data-lucide="mic"></i></button>
+            <button id="btn-stop" class="btn btn-icon-only" onclick="AudioManager.stopRecord()" disabled title="停止錄音"><i data-lucide="square"></i></button>
           </div>
+          <div id="audio-timer" style="font-size:2rem; font-family:'Inter', sans-serif; font-weight:300; margin-top:12px;">00:00</div>
+          <div id="audio-slice-status" style="font-size:0.82rem; color:var(--text-secondary); margin-top:6px;"></div>
+          <div id="audio-step-guide" style="font-size:0.82rem; color:var(--text-primary); margin-top:6px; font-weight:500;">點擊麥克風開始錄音（每 30 秒自動建檔至歷史紀錄）</div>
+          <button id="btn-fake-sleep" class="btn" style="margin-top:14px; font-size:0.82rem; border-color:var(--line-dark); display:none;" onclick="AudioManager.enterFakeSleep()">
+            <i data-lucide="moon" style="width:15px; height:15px;"></i> 進入防誤觸黑屏省電模式（放口袋專用）
+          </button>
 
-          <div id="audio-panel-right" class="design-panel panel-sticky">
-            <div class="metric-card">
-              <div style="display:flex; gap:12px; margin-bottom:20px;">
-                <button class="btn btn-primary btn-icon-only" onclick="ProjectManager.generateAnalysis('summary')" style="flex:1;" title="提煉專案總結"><i data-lucide="file-text"></i></button>
-                <button class="btn btn-primary btn-icon-only" onclick="ProjectManager.generateAnalysis('warning')" style="flex:1;" title="分析工程風險"><i data-lucide="alert-triangle"></i></button>
-              </div>
-              <div class="input-field-group">
-                <label class="input-field-label">專案總結</label>
-                <textarea id="box-summary" class="spec-input" style="min-height:120px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_summary', () => ProjectManager.saveTextField('summary', 'box-summary', true), 600, '專案總結')" onblur="Debouncer.flush('save_summary')"></textarea>
-              </div>
-              <div class="input-field-group" style="margin-top:20px;">
-                <label class="input-field-label">防禦與注意</label>
-                <textarea id="box-warning" class="spec-input" style="min-height:120px; line-height:1.75; font-size:0.95rem;" oninput="Debouncer.run('save_warning', () => ProjectManager.saveTextField('warning', 'box-warning', true), 600, '防禦與注意')" onblur="Debouncer.flush('save_warning')"></textarea>
-              </div>
-              <button class="btn btn-primary btn-icon-only" style="width:100%; margin-top:12px;" onclick="AudioManager.archiveCurrentSession()" title="歸檔至歷史紀錄">
-                <i data-lucide="archive" style="width:18px; height:18px;"></i>
+          <div id="audio-clips-wrapper" data-audio-accordion="true" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line-light); text-align:left;">
+            <div style="display:flex; justify-content:center;">
+              <button id="btn-toggle-clips" class="btn" style="min-height:34px; padding:0 14px; border-color:var(--line-dark) !important; gap:8px;" onclick="AudioManager.toggleClipsAccordion()" title="展開/收合本次建檔音訊">
+                <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
+                <span id="audio-clips-count" style="font-family:'Inter',sans-serif; font-weight:600; font-size:0.85rem;">0</span>
+                <i id="audio-clips-chevron" data-lucide="chevron-down" style="width:14px; height:14px;"></i>
               </button>
             </div>
+            <div id="audio-clips-list" style="display:none; margin-top:12px; border:1px solid var(--line-light); background:#FAFAFA; padding:8px 12px;"></div>
           </div>
         </div>
 
         
-        <div class="accordion-item" data-audio-accordion="true" style="margin-top: 24px;">
+        <div id="fake-sleep-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000000; z-index:99999; color:#444; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; -webkit-user-select:none;">
+          <div style="font-size:0.9rem; color:#555; margin-bottom:8px;">● 現場丈量持續收音中</div>
+          <div id="fake-sleep-timer" style="font-size:2.5rem; font-family:'Inter',sans-serif; color:#333; font-weight:300;">00:00</div>
+          <div style="font-size:0.75rem; color:#666; margin-top:30px; border:1px solid #333; padding:6px 14px; border-radius:20px;">長按螢幕 1.5 秒喚醒面板</div>
+        </div>
+
+        
+        <div class="accordion-item" data-audio-accordion="true" style="margin-top: 12px;">
           <div class="accordion-header" onclick="AudioManager.toggleHistoryAccordion()">
             <span style="display:inline-flex; align-items:center; gap:8px; font-weight:600;">
               <i data-lucide="history" style="width:16px; height:16px;"></i>
@@ -4238,6 +4187,8 @@
       currentSliceStartSec: 0,
       currentChunkIndex: 1,
       isRecording: false,
+      isPaused: false,
+      accumulatedSeconds: 0,
       isUploadingSlice: false,
       isTranscribing: false,
       pendingSlicePromises: [],
@@ -4614,12 +4565,18 @@
                         <textarea class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'notes', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'notes', this.value, true)">${this.escapeHtml(h.notes || '')}</textarea>
                       </div>
                       <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
-                        <label class="input-field-label" style="display:block; margin-bottom:8px;">專案總結</label>
-                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'summary', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'summary', this.value, true)">${this.escapeHtml(h.summary || '')}</textarea>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                          <label class="input-field-label" style="margin:0;">專案總結</label>
+                          <button type="button" class="btn btn-icon-only" style="min-height:28px; padding:0 8px !important; border-color:var(--line-dark) !important;" onclick="AudioManager.generateHistoryAnalysis(${i}, 'summary', this)" title="依逐字稿與注記重新解析專案總結"><i data-lucide="refresh-cw" style="width:13px; height:13px;"></i></button>
+                        </div>
+                        <textarea id="audio-history-summary-${i}" class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'summary', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'summary', this.value, true)">${this.escapeHtml(h.summary || '')}</textarea>
                       </div>
                       <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
-                        <label class="input-field-label" style="display:block; margin-bottom:8px;">防禦與注意</label>
-                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'warning', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'warning', this.value, true)">${this.escapeHtml(h.warning || '')}</textarea>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                          <label class="input-field-label" style="margin:0;">防禦與注意</label>
+                          <button type="button" class="btn btn-icon-only" style="min-height:28px; padding:0 8px !important; border-color:var(--line-dark) !important;" onclick="AudioManager.generateHistoryAnalysis(${i}, 'warning', this)" title="依逐字稿與注記重新解析防禦與注意"><i data-lucide="refresh-cw" style="width:13px; height:13px;"></i></button>
+                        </div>
+                        <textarea id="audio-history-warning-${i}" class="spec-input" style="border:none !important; padding:0; min-height:110px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'warning', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'warning', this.value, true)">${this.escapeHtml(h.warning || '')}</textarea>
                       </div>
                     </div>
                   </div>
@@ -4792,15 +4749,59 @@
       },
 
       detectNextChunkIndex() {
-        const txArea = document.getElementById('live-transcript');
-        const existingText = txArea ? txArea.value : '';
-        const matches = [...existingText.matchAll(/【第\s*(\d+)\s*片段】/g)];
-        let maxIdx = 0;
-        matches.forEach(m => {
-          const n = parseInt(m[1], 10);
-          if (!isNaN(n) && n > maxIdx) maxIdx = n;
-        });
+        let maxIdx = this.sessionClips.length;
+        if (this.currentSessionRecordId && Array.isArray(StateStore.state.audioHistory)) {
+          const curHis = StateStore.state.audioHistory.find(h => h.recordId === this.currentSessionRecordId);
+          if (curHis && curHis.transcript) {
+            const matches = [...String(curHis.transcript).matchAll(/【第\s*(\d+)\s*片段】/g)];
+            matches.forEach(m => {
+              const n = parseInt(m[1], 10);
+              if (!isNaN(n) && n > maxIdx) maxIdx = n;
+            });
+          }
+        }
         return maxIdx + 1;
+      },
+
+      async generateHistoryAnalysis(historyIdx, type, btn) {
+        const pId = StateStore.get('activeProject');
+        const h = (StateStore.state.audioHistory || [])[historyIdx];
+        if (!pId || !h) return Toast.show('找不到對應的歷史紀錄', 'error');
+
+        const label = type === 'summary' ? '專案總結' : '防禦與注意';
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i data-lucide="loader" style="width:14px; height:14px;"></i>';
+          if (typeof RedrawIcons === 'function') RedrawIcons();
+        }
+        SaveStatus.setSaving(`重新解析${label}...`, 60);
+
+        try {
+          const res = await ApiQueue.sendRequest('generateProjectAnalysis', {
+            projectId: pId,
+            recordId: h.recordId,
+            type: type,
+            transcript: h.transcript || '',
+            notes: h.notes || ''
+          });
+          if (res && res.resultText !== undefined) {
+            h[type] = res.resultText;
+            const targetEl = document.getElementById(`audio-history-${type}-${historyIdx}`);
+            if (targetEl) targetEl.value = res.resultText;
+            SaveStatus.setSaved(`${label}已重新解析並寫入雙表`);
+            Toast.show(`${label}已重新解析並更新儲存格`);
+          }
+        } catch (err) {
+          SaveStatus.setError(`${label}解析失敗`);
+          Toast.show(`${label}解析失敗: ${err.message}`, 'error');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            if (typeof RedrawIcons === 'function') RedrawIcons();
+          }
+        }
       },
 
       initWorkerTimer() {
@@ -4821,10 +4822,36 @@
         this.workerTimer.onmessage = () => this.handleTimerTick();
       },
 
+      updateRecordButtonUI(mode) {
+        const btn = document.getElementById('btn-record');
+        if (!btn) return;
+        if (mode === 'recording') {
+          btn.innerHTML = '<i data-lucide="pause"></i>';
+          btn.title = '暫停錄音（先截斷並建檔）';
+        } else if (mode === 'paused') {
+          btn.innerHTML = '<i data-lucide="play"></i>';
+          btn.title = '繼續錄音（開啟全新 30 秒片段）';
+        } else {
+          btn.innerHTML = '<i data-lucide="mic"></i>';
+          btn.title = '步驟 1：開始錄音';
+        }
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      },
+
+      toggleRecordOrPause() {
+        if (this.isRecording) {
+          this.pauseRecord('已手動暫停並截斷建檔');
+        } else if (this.isPaused) {
+          this.resumeRecord();
+        } else {
+          this.startRecord();
+        }
+      },
+
       handleTimerTick() {
         if (!this.isRecording) return;
         const now = Date.now();
-        this.secondsElapsed = Math.floor((now - this.recordStartTime) / 1000);
+        this.secondsElapsed = this.accumulatedSeconds + Math.floor((now - this.recordStartTime) / 1000);
         const m = String(Math.floor(this.secondsElapsed / 60)).padStart(2, '0');
         const s = String(this.secondsElapsed % 60).padStart(2, '0');
         const timerEl = document.getElementById('audio-timer');
@@ -4842,13 +4869,11 @@
 
         
         const track = this.audioStream && this.audioStream.getAudioTracks ? this.audioStream.getAudioTracks()[0] : null;
-        if (!track || track.readyState !== 'live' || (this.secondsElapsed > 3 && track.muted)) {
-          this.stopRecord();
-          Toast.show('麥克風已被系統暫停或中斷，已自動停止並保存先前片段', 'error');
+        if (!track || track.readyState !== 'live' || (this.secondsElapsed - this.currentSliceStartSec > 2 && track.muted)) {
+          this.pauseRecord('偵測到麥克風切換至其他 App 或來電，已自動暫停並建檔');
           return;
         }
 
-        
         if (this.secondsElapsed - this.currentSliceStartSec >= 30) {
           const oldRecorder = this.mediaRecorder;
           this.currentSliceStartSec = this.secondsElapsed;
@@ -4961,34 +4986,73 @@
         }
       },
 
+      async acquireMicStream_() {
+        this.audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+
+        
+        const track = this.audioStream.getAudioTracks()[0];
+        if (track) {
+          track.onended = () => {
+            if (this.isRecording) this.pauseRecord('麥克風已切換至其他 App，已自動暫停並建檔');
+          };
+          track.onmute = () => {
+            if (this.isRecording && (this.secondsElapsed - this.currentSliceStartSec > 2)) {
+              this.pauseRecord('麥克風被系統靜音或通話佔用，已自動暫停並建檔');
+            }
+          };
+        }
+
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.audioCtx = new AudioContextClass();
+            this.audioCtx.onstatechange = () => {
+              if (this.isRecording && this.audioCtx && (this.audioCtx.state === 'interrupted' || this.audioCtx.state === 'suspended')) {
+                this.pauseRecord('偵測到來電或系統中斷，已自動暫停並建檔');
+              }
+            };
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            gain.gain.value = 0.0001;
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start();
+            this.keepAliveOsc = osc;
+          }
+        } catch (ctxErr) {
+          console.warn('AudioContext 背景保活啟動略過', ctxErr);
+        }
+      },
+
+      releaseMicResources_() {
+        if (this.keepAliveOsc) { try { this.keepAliveOsc.stop(); } catch (e) {} this.keepAliveOsc = null; }
+        if (this.audioCtx) { try { this.audioCtx.close(); } catch (e) {} this.audioCtx = null; }
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+          this.mediaRecorder.stop();
+        }
+        this.mediaRecorder = null;
+        if (this.audioStream) {
+          this.audioStream.getTracks().forEach(t => {
+            t.onended = null;
+            t.onmute = null;
+            t.stop();
+          });
+          this.audioStream = null;
+        }
+      },
+
       async startRecord() {
         const pId = StateStore.get('activeProject');
         if (!pId) return Toast.show('請先選擇或新建專案', 'error');
 
         try {
-          this.audioStream = await navigator.mediaDevices.getUserMedia({
-            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-          });
-
-          
-          try {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) {
-              this.audioCtx = new AudioContextClass();
-              const osc = this.audioCtx.createOscillator();
-              const gain = this.audioCtx.createGain();
-              gain.gain.value = 0.0001; 
-              osc.connect(gain);
-              gain.connect(this.audioCtx.destination);
-              osc.start();
-              this.keepAliveOsc = osc;
-            }
-          } catch (ctxErr) {
-            console.warn('AudioContext 背景保活啟動略過', ctxErr);
-          }
+          await this.acquireMicStream_();
 
           this.currentChunkIndex = this.detectNextChunkIndex();
           this.secondsElapsed = 0;
+          this.accumulatedSeconds = 0;
           this.currentSliceStartSec = 0;
           this.recordStartTime = Date.now();
           if (!this.sessionStartTimestamp) {
@@ -4997,11 +5061,13 @@
           if (!this.currentSessionRecordId) {
             this.currentSessionRecordId = 'HIS-' + pId + '-' + Date.now();
           }
+          this.isPaused = false;
           this.isRecording = true;
 
           this.startNewSliceRecorder(0);
 
-          document.getElementById('btn-record').disabled = true;
+          this.updateRecordButtonUI('recording');
+          document.getElementById('btn-record').disabled = false;
           document.getElementById('btn-stop').disabled = false;
           document.getElementById('audio-timer').textContent = '00:00';
           const btnSleep = document.getElementById('btn-fake-sleep');
@@ -5013,33 +5079,88 @@
             statusEl.textContent = `正在錄製【第 ${this.currentChunkIndex - 1} 片段】(00分00秒～00分30秒)...`;
           }
 
-          
           this.initWorkerTimer();
           this.workerTimer.postMessage('start');
-          this.setStepGuide('錄音中（每 30 秒自動建檔至雲端）→ 結束請點擊停止按鈕');
-
-          Toast.show('已啟動錄音！每 30 秒自動建檔，背景/手機滑開不中斷');
+          this.setStepGuide('錄音中（每 30 秒自動建檔）→ 可點擊暫停或停止');
+          Toast.show('已啟動錄音！可隨時按暫停，來電切換也會自動暫停建檔');
         } catch (err) {
           Toast.show('無法取得麥克風權限: ' + err.message, 'error');
         }
       },
 
-      stopRecord() {
+      pauseRecord(reasonMsg = '已暫停錄音並截斷建檔') {
+        if (!this.isRecording || this.isPaused) return;
         this.isRecording = false;
+        this.isPaused = true;
         if (this.workerTimer) this.workerTimer.postMessage('stop');
 
-        
-        if (this.keepAliveOsc) { try { this.keepAliveOsc.stop(); } catch(e){} this.keepAliveOsc = null; }
-        if (this.audioCtx) { try { this.audioCtx.close(); } catch(e){} this.audioCtx = null; }
+        this.accumulatedSeconds = this.secondsElapsed;
+        this.releaseMicResources_();
 
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-          this.mediaRecorder.stop();
-        }
-        if (this.audioStream) {
-          this.audioStream.getTracks().forEach(t => t.stop());
-          this.audioStream = null;
-        }
+        this.updateRecordButtonUI('paused');
+        document.getElementById('btn-record').disabled = false;
+        document.getElementById('btn-stop').disabled = false;
 
+        const btnSleep = document.getElementById('btn-fake-sleep');
+        if (btnSleep) btnSleep.style.display = 'none';
+        const overlay = document.getElementById('fake-sleep-overlay');
+        if (overlay) overlay.style.display = 'none';
+        this.releaseWakeLock();
+
+        const statusEl = document.getElementById('audio-slice-status');
+        if (statusEl) statusEl.textContent = '已暫停（目前片段已截斷並建檔）';
+        this.setStepGuide('已暫停 → 結束其他 App 後點擊播放圖標繼續全新 30 秒錄音，或點停止結束');
+        Toast.show(reasonMsg, 'info');
+      },
+
+      async resumeRecord() {
+        const pId = StateStore.get('activeProject');
+        if (!pId) return Toast.show('請先選擇或新建專案', 'error');
+        if (!this.isPaused) return;
+
+        try {
+          await this.acquireMicStream_();
+
+          this.isPaused = false;
+          this.isRecording = true;
+          this.recordStartTime = Date.now();
+          this.currentSliceStartSec = this.accumulatedSeconds;
+
+          this.startNewSliceRecorder(this.currentSliceStartSec);
+
+          this.updateRecordButtonUI('recording');
+          document.getElementById('btn-record').disabled = false;
+          document.getElementById('btn-stop').disabled = false;
+          const btnSleep = document.getElementById('btn-fake-sleep');
+          if (btnSleep) btnSleep.style.display = 'inline-block';
+          this.requestWakeLock();
+
+          const activeIdx = this.currentChunkIndex - 1;
+          const startStr = this.formatMinSec(this.currentSliceStartSec);
+          const nextStr = this.formatMinSec(this.currentSliceStartSec + 30);
+          const statusEl = document.getElementById('audio-slice-status');
+          if (statusEl) statusEl.textContent = `正在錄製【第 ${activeIdx} 片段】(${startStr}～${nextStr})...`;
+
+          this.initWorkerTimer();
+          this.workerTimer.postMessage('start');
+          this.setStepGuide('已繼續錄製全新 30 秒片段 → 可隨時點擊暫停或停止');
+          Toast.show(`已繼續錄音！開始全新 30 秒【第 ${activeIdx} 片段】`);
+        } catch (err) {
+          this.isPaused = true;
+          this.isRecording = false;
+          Toast.show('麥克風尚未釋放或無權限，請結束通話後再試: ' + err.message, 'error');
+        }
+      },
+
+      stopRecord() {
+        this.isRecording = false;
+        this.isPaused = false;
+        this.accumulatedSeconds = 0;
+        if (this.workerTimer) this.workerTimer.postMessage('stop');
+
+        this.releaseMicResources_();
+
+        this.updateRecordButtonUI('idle');
         document.getElementById('btn-record').disabled = false;
         document.getElementById('btn-stop').disabled = true;
         const btnSleep = document.getElementById('btn-fake-sleep');
@@ -5048,10 +5169,14 @@
         if (overlay) overlay.style.display = 'none';
         this.releaseWakeLock();
 
+        this.currentSessionRecordId = '';
+        this.sessionStartTimestamp = '';
+        this.sessionClips = [];
+        this.renderClipsAccordion();
         const statusEl = document.getElementById('audio-slice-status');
-        if (statusEl) statusEl.textContent = '音檔已完成建檔，請點擊處理器圖標執行解析';
-        this.setStepGuide('步驟 2：點擊處理器圖標開始 AI 聽打解析');
-        Toast.show('錄音已結束，請點擊處理器圖標執行聽打解析');
+        if (statusEl) statusEl.textContent = '';
+        this.setStepGuide('錄音已結束並保存於下方歷史紀錄，可隨時展開進行 AI 解析');
+        Toast.show('錄音已結束，可於下方歷史紀錄展開解析');
       },
 
       async transcribeAllChunks() {
