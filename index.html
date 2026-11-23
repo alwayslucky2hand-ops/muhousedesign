@@ -5152,31 +5152,80 @@
         }
       },
 
-      stopRecord() {
+      async stopRecord() {
+        const pId = StateStore.get('activeProject');
+        const sessionId = this.currentSessionRecordId;
+        const sessionTs = this.sessionStartTimestamp || this.formatTimestamp(new Date());
+
         this.isRecording = false;
         this.isPaused = false;
         this.accumulatedSeconds = 0;
         if (this.workerTimer) this.workerTimer.postMessage('stop');
 
+        const btnRecord = document.getElementById('btn-record');
+        const btnStop = document.getElementById('btn-stop');
+        if (btnRecord) btnRecord.disabled = true;
+        if (btnStop) btnStop.disabled = true;
+
         this.releaseMicResources_();
 
-        this.updateRecordButtonUI('idle');
-        document.getElementById('btn-record').disabled = false;
-        document.getElementById('btn-stop').disabled = true;
         const btnSleep = document.getElementById('btn-fake-sleep');
         if (btnSleep) btnSleep.style.display = 'none';
         const overlay = document.getElementById('fake-sleep-overlay');
         if (overlay) overlay.style.display = 'none';
         this.releaseWakeLock();
 
+        const statusEl = document.getElementById('audio-slice-status');
+        if (statusEl) statusEl.textContent = '正在完成最後片段建檔並打包至歷史紀錄...';
+        this.setStepGuide('正在完成最後片段雲端建檔，請稍候...');
+        SaveStatus.setSaving('完成最後片段建檔並打包歷史紀錄...', 65);
+
+        
+        await new Promise(r => setTimeout(r, 200));
+        if (this.pendingSlicePromises && this.pendingSlicePromises.length > 0) {
+          await Promise.allSettled(this.pendingSlicePromises);
+          this.pendingSlicePromises = [];
+        }
+
+        
+        const packedClips = [...this.sessionClips].sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0));
+        if (pId && packedClips.length > 0) {
+          try {
+            const res = await ApiQueue.sendRequest('archiveAudioSession', {
+              projectId: pId,
+              sessionRecordId: sessionId,
+              clips: packedClips,
+              recordedAt: sessionTs
+            });
+            if (res) {
+              if (!Array.isArray(StateStore.state.audioHistory)) StateStore.state.audioHistory = [];
+              const existIdx = StateStore.state.audioHistory.findIndex(h => h.recordId === res.recordId);
+              if (existIdx >= 0) {
+                StateStore.state.audioHistory[existIdx] = res;
+              } else {
+                StateStore.state.audioHistory.unshift(res);
+              }
+              this.renderHistoryAccordion();
+            }
+            SaveStatus.setSaved(`已打包 ${packedClips.length} 段音檔至歷史紀錄`);
+            Toast.show(`錄音已結束！已將 ${packedClips.length} 段音檔打包至下方歷史紀錄`);
+          } catch (err) {
+            SaveStatus.setError('歷史紀錄打包失敗');
+            Toast.show('打包歷史紀錄失敗: ' + err.message, 'error');
+          }
+        } else {
+          Toast.show('錄音已結束');
+        }
+
+        
         this.currentSessionRecordId = '';
         this.sessionStartTimestamp = '';
         this.sessionClips = [];
         this.renderClipsAccordion();
-        const statusEl = document.getElementById('audio-slice-status');
+        this.updateRecordButtonUI('idle');
+        if (btnRecord) btnRecord.disabled = false;
         if (statusEl) statusEl.textContent = '';
-        this.setStepGuide('錄音已結束並保存於下方歷史紀錄，可隨時展開進行 AI 解析');
-        Toast.show('錄音已結束，可於下方歷史紀錄展開解析');
+        this.setStepGuide('錄音已結束並打包至下方歷史紀錄，可展開進行 AI 解析');
       },
 
       async transcribeAllChunks() {
