@@ -4240,6 +4240,8 @@
       isRecording: false,
       isUploadingSlice: false,
       isTranscribing: false,
+      pendingSlicePromises: [],
+      currentSessionRecordId: '',
       sessionClips: [],
       sessionStartTimestamp: '',
       isClipsOpen: false,
@@ -4406,6 +4408,117 @@
         }
       },
 
+      getClipIdFromUrl(url) {
+        const m = String(url || '').match(/\/d\/([a-zA-Z0-9_-]+)/) || String(url || '').match(/id=([a-zA-Z0-9_-]+)/);
+        return m ? m[1] : String(url || '').trim();
+      },
+
+      analyzeHistoryClipStates(h) {
+        const clips = Array.isArray(h && h.clips) ? h.clips : [];
+        const transcript = String((h && h.transcript) || '');
+        const blockRegex = /【第\s*(\d+)\s*片段】[\s\S]*?(?=\n*【第\s*\d+\s*片段】|$)/g;
+        const parsedBlocks = [];
+        let m;
+        while ((m = blockRegex.exec(transcript)) !== null) {
+          const blockText = m[0];
+          const urlMatch = blockText.match(/雲端硬碟網址[：:]\s*(https?:\/\/[^\s]+)/);
+          const bodyMatch = blockText.match(/語音逐字稿[：:]\s*([\s\S]*?)(?=\n雲端硬碟網址[：:]|$)/);
+          const bodyText = bodyMatch ? bodyMatch[1].trim() : '';
+          const timeMatch = blockText.match(/總錄製時間[：:]\s*([^\n]+)/);
+          const isUnparsed = !bodyText || /尚未解析/.test(bodyText);
+          const isFailed = !isUnparsed && /AI 連線異常|AI 執行發生錯誤|解析失敗|無輸出/.test(bodyText);
+          parsedBlocks.push({
+            idx: parseInt(m[1], 10),
+            fileId: urlMatch ? this.getClipIdFromUrl(urlMatch[1]) : '',
+            timeRange: timeMatch ? timeMatch[1].trim() : '',
+            isUnparsed: isUnparsed,
+            isFailed: isFailed
+          });
+        }
+
+        return clips.map((url, idx) => {
+          const fId = this.getClipIdFromUrl(url);
+          const matched = parsedBlocks.find(b => b.fileId && b.fileId === fId) || parsedBlocks.find(b => b.idx === idx + 1);
+          if (!matched || matched.isUnparsed) {
+            return { seqIndex: idx + 1, clipIndex: (matched && matched.idx) || (idx + 1), url, timeRange: (matched && matched.timeRange) || '', state: 'unparsed' };
+          }
+          if (matched.isFailed) {
+            return { seqIndex: idx + 1, clipIndex: matched.idx || (idx + 1), url, timeRange: matched.timeRange, state: 'failed' };
+          }
+          return { seqIndex: idx + 1, clipIndex: matched.idx || (idx + 1), url, timeRange: matched.timeRange, state: 'ok' };
+        });
+      },
+
+      async reparseHistoryClips(historyIdx, btn, singleSeqIndex = null, forceAll = false) {
+        const pId = StateStore.get('activeProject');
+        const history = StateStore.state.audioHistory || [];
+        const h = history[historyIdx];
+        if (!pId || !h) return Toast.show('找不到對應的歷史紀錄', 'error');
+        if (this.isTranscribing) return Toast.show('語音解析處理中，請稍候...', 'info');
+
+        const states = this.analyzeHistoryClipStates(h);
+        const targets = singleSeqIndex !== null
+          ? states.filter(s => s.seqIndex === singleSeqIndex)
+          : (forceAll ? states : states.filter(s => s.state !== 'ok'));
+
+        if (targets.length === 0) {
+          return Toast.show('此筆歷史紀錄的所有影音檔皆已解析完成', 'info');
+        }
+
+        targets.sort((a, b) => a.clipIndex - b.clipIndex);
+
+        this.isTranscribing = true;
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) btn.disabled = true;
+        SaveStatus.setSaving(`準備補解析 ${targets.length} 個影音片段...`, 20);
+
+        let successCount = 0;
+        try {
+          for (let i = 0; i < targets.length; i++) {
+            const t = targets[i];
+            if (btn) {
+              btn.innerHTML = `<span style="font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:600;">${i + 1}/${targets.length}</span>`;
+            }
+            SaveStatus.setSaving(`補解析第 ${t.clipIndex} 片段 (${i + 1}/${targets.length})...`, Math.round(((i + 0.5) / targets.length) * 100));
+
+            try {
+              const res = await ApiQueue.sendRequest('reparseHistoryAudioClip', {
+                projectId: pId,
+                recordId: h.recordId,
+                clipIndex: t.clipIndex,
+                driveUrl: t.url,
+                timeRange: t.timeRange
+              });
+
+              if (res && res.transcript !== undefined) {
+                h.transcript = res.transcript;
+                const txEl = document.getElementById(`audio-history-transcript-${historyIdx}`);
+                if (txEl) txEl.value = res.transcript;
+                successCount++;
+              }
+            } catch (err) {
+              Toast.show(`第 ${t.clipIndex} 片段補解析失敗: ${err.message}`, 'error');
+            }
+          }
+
+          this.renderHistoryAccordion();
+          const itemEl = document.getElementById(`audio-history-item-${historyIdx}`);
+          if (itemEl) itemEl.classList.add('active');
+          const subFieldEl = document.getElementById(`audio-history-sub-${this.activeHistorySubTab || 'clips'}-${historyIdx}`);
+          if (subFieldEl) subFieldEl.style.display = 'block';
+
+          SaveStatus.setSaved(`已完成 ${successCount}/${targets.length} 段補解析並更新儲存格`);
+          Toast.show(`已完成 ${successCount}/${targets.length} 段補解析，並依片段順序更新儲存格`);
+        } finally {
+          this.isTranscribing = false;
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            if (typeof RedrawIcons === 'function') RedrawIcons();
+          }
+        }
+      },
+
       renderHistoryAccordion() {
         const listEl = document.getElementById('audio-history-list');
         const countEl = document.getElementById('audio-history-count');
@@ -4419,20 +4532,44 @@
         }
 
         listEl.innerHTML = items.map((h, i) => {
-          const clipCount = (h.clips || []).length;
+          const clipStates = this.analyzeHistoryClipStates(h);
+          const clipCount = clipStates.length;
+          const pendingCount = clipStates.filter(s => s.state !== 'ok').length;
+
           const clipsListHtml = clipCount > 0
-            ? h.clips.map((u, uIdx) => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--line-light); background:#FFFFFF; margin-bottom:8px;">
-                  <span style="display:inline-flex; align-items:center; gap:8px; font-size:0.88rem; color:#111111;">
-                    <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
-                    <b style="font-family:'Inter',sans-serif;">${uIdx + 1}</b>
-                  </span>
-                  <a href="${u}" target="_blank" rel="noopener noreferrer" class="btn btn-icon-only" style="min-height:32px; text-decoration:none;" title="開啟雲端錄音檔">
-                    <i data-lucide="external-link" style="width:14px; height:14px;"></i>
-                  </a>
-                </div>
-              `).join('')
+            ? clipStates.map((cs) => {
+                const stateIcon = cs.state === 'ok'
+                  ? '<i data-lucide="check" style="width:14px; height:14px; color:#111111;"></i>'
+                  : (cs.state === 'failed'
+                    ? '<i data-lucide="alert-circle" style="width:14px; height:14px; color:#ff4d4f;"></i>'
+                    : '<i data-lucide="clock" style="width:14px; height:14px; color:#555555;"></i>');
+
+                const reparseOneBtn = `<button type="button" class="btn btn-icon-only" style="min-height:32px; border-color:var(--line-dark) !important;" onclick="AudioManager.reparseHistoryClips(${i}, this, ${cs.seqIndex}, true)" title="重新解析此片段"><i data-lucide="refresh-cw" style="width:14px; height:14px;"></i></button>`;
+
+                return `
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--line-light); background:#FFFFFF; margin-bottom:8px;">
+                    <span style="display:inline-flex; align-items:center; gap:8px; font-size:0.88rem; color:#111111;">
+                      <i data-lucide="file-audio" style="width:15px; height:15px;"></i>
+                      <b style="font-family:'Inter',sans-serif;">${cs.clipIndex}</b>
+                      ${stateIcon}
+                    </span>
+                    <div style="display:inline-flex; align-items:center; gap:8px;">
+                      ${reparseOneBtn}
+                      <a href="${cs.url}" target="_blank" rel="noopener noreferrer" class="btn btn-icon-only" style="min-height:32px; text-decoration:none;" title="開啟雲端錄音檔">
+                        <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+                      </a>
+                    </div>
+                  </div>
+                `;
+              }).join('')
             : '<div style="color:var(--text-muted); font-size:0.85rem; padding:12px;">本次無雲端音訊檔</div>';
+
+          const batchReparseBtn = clipCount > 0
+            ? `
+              ${pendingCount > 0 ? `<button type="button" class="btn btn-primary btn-icon-only" style="width:100%;" onclick="AudioManager.reparseHistoryClips(${i}, this, null, false)" title="補解析未解析或失敗之影音檔 (${pendingCount} 段)"><i data-lucide="cpu" style="width:16px; height:16px;"></i></button>` : ''}
+              <button type="button" class="btn btn-icon-only" style="width:100%; border-color:var(--line-dark) !important;" onclick="AudioManager.reparseHistoryClips(${i}, this, null, true)" title="全部影音檔重新解析 (${clipCount} 段)"><i data-lucide="refresh-cw" style="width:16px; height:16px;"></i></button>
+            `
+            : '';
 
           return `
             <div class="accordion-item" style="margin-bottom:14px;">
@@ -4440,13 +4577,14 @@
                 <span style="display:inline-flex; align-items:center; gap:10px; font-size:0.92rem; line-height:1.4; word-break:break-word;">
                   <i data-lucide="clock" style="width:15px; height:15px; color:var(--text-secondary); flex-shrink:0;"></i>
                   <b style="font-family:'Inter',sans-serif;">${h.timestamp || '已歸檔紀錄'}</b>
+                  ${pendingCount > 0 ? `<span style="font-family:'Inter',sans-serif; font-size:0.75rem; border:1px solid #ff4d4f; color:#ff4d4f; padding:0 6px;">${pendingCount}</span>` : ''}
                 </span>
                 <i data-lucide="chevron-down" style="width:16px; height:16px; flex-shrink:0;"></i>
               </div>
 
               <div id="audio-history-item-${i}" class="accordion-content" style="background:#FAFAFA !important; padding:16px;">
-                <!-- 單欄垂直排列子收合區控制鈕（不並排、不擠壓、純線條 Icon + 數字） -->
                 <div style="display:flex; flex-direction:column; gap:10px;">
+                  ${batchReparseBtn}
                   <button class="btn" style="width:100%; justify-content:space-between; padding:0 16px;" onclick="AudioManager.toggleHistorySub(${i}, 'clips')">
                     <span style="display:inline-flex; align-items:center; gap:8px;">
                       <i data-lucide="file-audio" style="width:16px; height:16px;"></i>
@@ -4469,7 +4607,7 @@
                     <div style="display:flex; flex-direction:column; gap:16px;">
                       <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
                         <label class="input-field-label" style="display:block; margin-bottom:8px;">逐字稿</label>
-                        <textarea class="spec-input" style="border:none !important; padding:0; min-height:140px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'transcript', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'transcript', this.value, true)">${this.escapeHtml(h.transcript || '')}</textarea>
+                        <textarea id="audio-history-transcript-${i}" class="spec-input" style="border:none !important; padding:0; min-height:140px; line-height:1.75; font-size:0.95rem; word-break:break-word;" oninput="AudioManager.updateHistoryField(${i}, 'transcript', this.value, false)" onblur="AudioManager.updateHistoryField(${i}, 'transcript', this.value, true)">${this.escapeHtml(h.transcript || '')}</textarea>
                       </div>
                       <div style="border:1px solid var(--line-light); background:#FFFFFF; padding:14px 16px;">
                         <label class="input-field-label" style="display:block; margin-bottom:8px;">注記</label>
@@ -4518,6 +4656,7 @@
         try {
           const res = await ApiQueue.sendRequest('archiveAudioSession', {
             projectId: pId,
+            sessionRecordId: this.currentSessionRecordId,
             transcript: transcript,
             notes: notes,
             summary: summary,
@@ -4528,9 +4667,15 @@
 
           if (res) {
             if (!Array.isArray(StateStore.state.audioHistory)) StateStore.state.audioHistory = [];
-            StateStore.state.audioHistory.unshift(res);
+            const existIdx = StateStore.state.audioHistory.findIndex(h => h.recordId === res.recordId);
+            if (existIdx >= 0) {
+              StateStore.state.audioHistory[existIdx] = res;
+            } else {
+              StateStore.state.audioHistory.unshift(res);
+            }
+            this.currentSessionRecordId = '';
 
-            // 儲存成功後立即清空四個欄位與本次音檔暫存，回到乾淨待機狀態
+            
             this.setTranscriptValue('');
             ['live-notes', 'box-summary', 'box-warning'].forEach(id => {
               const el = document.getElementById(id);
@@ -4695,24 +4840,36 @@
           statusEl.textContent = `背景錄製中【第 ${activeIdx} 片段】(${startStr}～${nextBoundaryStr})`;
         }
 
-        // 精確每 30 秒自動切換一次錄音機
+        
+        const track = this.audioStream && this.audioStream.getAudioTracks ? this.audioStream.getAudioTracks()[0] : null;
+        if (!track || track.readyState !== 'live' || (this.secondsElapsed > 3 && track.muted)) {
+          this.stopRecord();
+          Toast.show('麥克風已被系統暫停或中斷，已自動停止並保存先前片段', 'error');
+          return;
+        }
+
+        
         if (this.secondsElapsed - this.currentSliceStartSec >= 30) {
           const oldRecorder = this.mediaRecorder;
           this.currentSliceStartSec = this.secondsElapsed;
-          this.startNewSliceRecorder(this.currentSliceStartSec);
           if (oldRecorder && oldRecorder.state !== 'inactive') {
             oldRecorder.stop();
           }
+          this.startNewSliceRecorder(this.currentSliceStartSec);
         }
       },
 
       startNewSliceRecorder(sliceStartSec) {
         if (!this.audioStream) return;
-        const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? { mimeType: 'audio/webm;codecs=opus' }
-          : { mimeType: 'audio/webm' };
+        let recorder;
+        const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+        const supported = candidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m));
+        try {
+          recorder = supported ? new MediaRecorder(this.audioStream, { mimeType: supported }) : new MediaRecorder(this.audioStream);
+        } catch (e) {
+          recorder = new MediaRecorder(this.audioStream);
+        }
 
-        const recorder = new MediaRecorder(this.audioStream, options);
         const sliceIdx = this.currentChunkIndex++;
         const chunksBuffer = [];
 
@@ -4720,31 +4877,32 @@
           if (e.data && e.data.size > 0) chunksBuffer.push(e.data);
         };
 
-        recorder.onstop = async () => {
-          if (chunksBuffer.length === 0) return;
-          const sliceEndSec = Math.max(sliceStartSec + 1, this.secondsElapsed);
-          const mimeType = recorder.mimeType || 'audio/webm';
-          const fullBlob = new Blob(chunksBuffer, { type: mimeType });
-          if (fullBlob.size === 0) return;
+        recorder.onstop = () => {
+          const task = (async () => {
+            if (chunksBuffer.length === 0) return;
+            const sliceEndSec = Math.max(sliceStartSec + 1, this.secondsElapsed);
+            const mimeType = recorder.mimeType || supported || 'audio/webm';
+            const fullBlob = new Blob(chunksBuffer, { type: mimeType });
+            if (fullBlob.size < 2048) return;
 
-          const chunkRecord = {
-            projectId: StateStore.get('activeProject'),
-            blob: fullBlob,
-            mimeType: mimeType,
-            timestamp: Date.now(),
-            chunkIndex: sliceIdx,
-            startTimeStr: this.formatMinSec(sliceStartSec),
-            endTimeStr: this.formatMinSec(sliceEndSec),
-            driveUrl: '',
-            isStored: false,
-            isTranscribed: false
-          };
+            const chunkRecord = {
+              projectId: StateStore.get('activeProject'),
+              blob: fullBlob,
+              mimeType: mimeType,
+              timestamp: Date.now(),
+              chunkIndex: sliceIdx,
+              startTimeStr: this.formatMinSec(sliceStartSec),
+              endTimeStr: this.formatMinSec(sliceEndSec),
+              driveUrl: '',
+              isStored: false,
+              isTranscribed: false
+            };
 
-          const idbId = await AudioIDB.saveChunk(chunkRecord);
-          chunkRecord.id = idbId;
-
-          // 核心更動：只執行雲端硬碟建檔，絕不即時呼叫 Gemini 解析！
-          this.saveSliceToDriveOnly(chunkRecord);
+            const idbId = await AudioIDB.saveChunk(chunkRecord);
+            chunkRecord.id = idbId;
+            await this.saveSliceToDriveOnly(chunkRecord);
+          })();
+          this.pendingSlicePromises.push(task);
         };
 
         this.mediaRecorder = recorder;
@@ -4764,6 +4922,8 @@
 
           const res = await ApiQueue.sendRequest('saveAudioSliceOnly', {
             projectId: pId,
+            sessionRecordId: this.currentSessionRecordId,
+            recordedAt: this.sessionStartTimestamp,
             base64Data: base64Data,
             mimeType: chunkRecord.mimeType,
             chunkIndex: chunkRecord.chunkIndex,
@@ -4781,8 +4941,20 @@
               url: res.url
             });
             this.renderClipsAccordion();
-            SaveStatus.setSaved(`第 ${chunkRecord.chunkIndex} 段音檔已建檔`);
-            Toast.show(`第 ${chunkRecord.chunkIndex} 片段已自動建檔至雲端`);
+
+            if (res.historyRecord) {
+              if (!Array.isArray(StateStore.state.audioHistory)) StateStore.state.audioHistory = [];
+              const hIdx = StateStore.state.audioHistory.findIndex(h => h.recordId === res.historyRecord.recordId);
+              if (hIdx >= 0) {
+                StateStore.state.audioHistory[hIdx] = res.historyRecord;
+              } else {
+                StateStore.state.audioHistory.unshift(res.historyRecord);
+              }
+              this.renderHistoryAccordion();
+            }
+
+            SaveStatus.setSaved(`第 ${chunkRecord.chunkIndex} 段音檔已建檔並同步歷史紀錄`);
+            Toast.show(`第 ${chunkRecord.chunkIndex} 片段已建檔並寫入歷史紀錄`);
           }
         } catch (e) {
           console.warn('雲端建檔待機重試，切片安全保留在本地 DB', e);
@@ -4798,14 +4970,14 @@
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
           });
 
-          // 1. 啟用 AudioContext 無聲振盪器，宣告背景活躍狀態（防螢幕鎖定休眠中斷）
+          
           try {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             if (AudioContextClass) {
               this.audioCtx = new AudioContextClass();
               const osc = this.audioCtx.createOscillator();
               const gain = this.audioCtx.createGain();
-              gain.gain.value = 0.0001; // 幾近無聲，維持 Audio Session
+              gain.gain.value = 0.0001; 
               osc.connect(gain);
               gain.connect(this.audioCtx.destination);
               osc.start();
@@ -4821,6 +4993,9 @@
           this.recordStartTime = Date.now();
           if (!this.sessionStartTimestamp) {
             this.sessionStartTimestamp = this.formatTimestamp(new Date());
+          }
+          if (!this.currentSessionRecordId) {
+            this.currentSessionRecordId = 'HIS-' + pId + '-' + Date.now();
           }
           this.isRecording = true;
 
@@ -4838,7 +5013,7 @@
             statusEl.textContent = `正在錄製【第 ${this.currentChunkIndex - 1} 片段】(00分00秒～00分30秒)...`;
           }
 
-          // 2. 啟動 Web Worker 定時器（不受瀏覽器背景休眠降速限制）
+          
           this.initWorkerTimer();
           this.workerTimer.postMessage('start');
           this.setStepGuide('錄音中（每 30 秒自動建檔至雲端）→ 結束請點擊停止按鈕');
@@ -4853,7 +5028,7 @@
         this.isRecording = false;
         if (this.workerTimer) this.workerTimer.postMessage('stop');
 
-        // 關閉背景保活振盪器
+        
         if (this.keepAliveOsc) { try { this.keepAliveOsc.stop(); } catch(e){} this.keepAliveOsc = null; }
         if (this.audioCtx) { try { this.audioCtx.close(); } catch(e){} this.audioCtx = null; }
 
@@ -4879,73 +5054,113 @@
         Toast.show('錄音已結束，請點擊處理器圖標執行聽打解析');
       },
 
-      // 【核心升級】按一下按鈕才「一個一個 30 秒檔案」依序做語音解析然後寫入逐字稿
       async transcribeAllChunks() {
         const pId = StateStore.get('activeProject');
         if (!pId) return Toast.show('請先選擇專案', 'error');
         if (this.isTranscribing) return Toast.show('語音解析處理中，請稍候...', 'info');
 
-        const chunks = await AudioIDB.getChunksByProject(pId);
-        const pendingChunks = chunks.filter(c => !c.isTranscribed);
-
-        if (pendingChunks.length === 0) {
-          return Toast.show('目前沒有待解析的 30 秒音訊切片', 'info');
-        }
-
-        // 依切片順序排序
-        pendingChunks.sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0));
-
         this.isTranscribing = true;
         const btnTranscribe = document.getElementById('btn-transcribe');
         const origBtnHtml = btnTranscribe ? btnTranscribe.innerHTML : '';
         if (btnTranscribe) btnTranscribe.disabled = true;
-
         const statusEl = document.getElementById('audio-slice-status');
 
         try {
+          
+          if (this.pendingSlicePromises && this.pendingSlicePromises.length > 0) {
+            if (statusEl) statusEl.textContent = '等待音檔建檔完成...';
+            await Promise.allSettled(this.pendingSlicePromises);
+            this.pendingSlicePromises = [];
+          }
+
+          const chunks = await AudioIDB.getChunksByProject(pId);
+          const pendingChunks = chunks.filter(c => !c.isTranscribed);
+
+          if (pendingChunks.length === 0) {
+            Toast.show('目前沒有待解析的 30 秒音訊切片', 'info');
+            return;
+          }
+
+          pendingChunks.sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0));
+          let failCount = 0;
+
           for (let i = 0; i < pendingChunks.length; i++) {
             const item = pendingChunks[i];
             const sliceIdx = item.chunkIndex || (i + 1);
             const timeRange = `${item.startTimeStr}～${item.endTimeStr}`;
 
             if (btnTranscribe) {
-              btnTranscribe.innerHTML = `正在解析第 ${i + 1} / ${pendingChunks.length} 個切片...`;
+              btnTranscribe.innerHTML = `<span style="font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;">${i + 1}/${pendingChunks.length}</span>`;
             }
             if (statusEl) {
               statusEl.textContent = `正在解析【第 ${sliceIdx} 片段】(${timeRange})...`;
             }
 
-            // 轉成 Base64
-            const base64Data = await new Promise(res => {
-              const reader = new FileReader();
-              reader.onload = () => res(reader.result.split(',')[1]);
-              reader.readAsDataURL(item.blob);
-            });
+            let base64Data = '';
+            if (item.blob && item.blob.size > 0) {
+              try {
+                base64Data = await new Promise((res, rej) => {
+                  const reader = new FileReader();
+                  reader.onload = () => res((reader.result || '').split(',')[1] || '');
+                  reader.onerror = () => rej(new Error('讀取音訊失敗'));
+                  reader.readAsDataURL(item.blob);
+                });
+              } catch (readErr) {
+                base64Data = '';
+              }
+            }
 
-            // 發送單一 30 秒切片進行 AI 聽打與試算表寫入
-            const response = await ApiQueue.sendRequest('transcribeAudioSlice', {
-              projectId: pId,
-              base64Data: base64Data,
-              mimeType: item.mimeType,
-              chunkIndex: sliceIdx,
-              startTimeStr: item.startTimeStr,
-              endTimeStr: item.endTimeStr,
-              driveUrl: item.driveUrl || ''
-            });
+            if (!base64Data && !item.driveUrl) {
+              failCount++;
+              continue;
+            }
+
+            let response = null;
+            let lastErr = null;
+            for (let retry = 0; retry < 2; retry++) {
+              try {
+                response = await ApiQueue.sendRequest('transcribeAudioSlice', {
+                  projectId: pId,
+                  base64Data: item.driveUrl ? '' : base64Data,
+                  mimeType: item.mimeType || 'audio/webm',
+                  chunkIndex: sliceIdx,
+                  startTimeStr: item.startTimeStr,
+                  endTimeStr: item.endTimeStr,
+                  driveUrl: item.driveUrl || ''
+                });
+                lastErr = null;
+                break;
+              } catch (err) {
+                lastErr = err;
+                await new Promise(r => setTimeout(r, 800));
+              }
+            }
+
+            if (lastErr) {
+              failCount++;
+              Toast.show(`第 ${sliceIdx} 片段暫時連線異常，已保留待重試`, 'error');
+              continue;
+            }
 
             if (response && response.transcript) {
               this.setTranscriptValue(response.transcript);
             }
+            if (response && response.url && !item.driveUrl) {
+              item.driveUrl = response.url;
+            }
 
-            // 標記該切片已解析
             item.isTranscribed = true;
             await AudioIDB.updateChunk(item);
-            Toast.show(`【第 ${sliceIdx} 片段】(${timeRange}) 解析完成並已寫入欄位！`);
+            Toast.show(`【第 ${sliceIdx} 片段】(${timeRange}) 解析完成！`);
           }
 
-          if (statusEl) statusEl.textContent = '解析完成，可確認內容後點擊儲存歸檔';
-          this.setStepGuide('步驟 3：檢視或補齊四欄內容，完成後點擊儲存歸檔');
-          Toast.show('所有音訊切片已全數解析完畢');
+          if (failCount === 0) {
+            if (statusEl) statusEl.textContent = '解析完成，可確認內容後點擊儲存歸檔';
+            this.setStepGuide('步驟 3：檢視或補齊四欄內容，完成後點擊儲存歸檔');
+            Toast.show('所有音訊切片已全數解析完畢');
+          } else {
+            if (statusEl) statusEl.textContent = `尚有 ${failCount} 個片段待重試，可再次點擊處理器圖標`;
+          }
         } catch (err) {
           Toast.show('解析過程發生錯誤: ' + err.message, 'error');
         } finally {
@@ -5063,13 +5278,13 @@
         fileDataList.forEach(fd => item.images.push(fd.base64));
         item.currentImageIdx = startIdx;
 
-        // 樂觀 UI：0 秒立即顯示與同步右側
+        
         this.syncImagesToMatchingTableItem(item);
         this.renderBlocks();
         this.renderTable();
         SaveStatus.setSaving(`背景建檔 ${fileDataList.length} 張圖檔...`, 40);
 
-        // 背景默默依序建檔並替換網址
+        
         (async () => {
           for (let i = 0; i < fileDataList.length; i++) {
             await this.uploadQuoteImageSilently(item, fileDataList[i]);
@@ -5098,7 +5313,7 @@
               item.images[liveIdx] = res.url;
               this.syncImagesToMatchingTableItem(item);
             } else {
-              // 若上傳期間使用者已樂觀移除該圖，背景自動清理雲端暫存檔
+              
               ApiQueue.sendRequest('deleteImageFromDrive', { imageUrl: res.url }).catch(() => {});
             }
           }
@@ -5134,7 +5349,7 @@
         const cIdx = item.currentImageIdx || 0;
         const imgUrl = item.images[cIdx];
 
-        // 樂觀 UI：0 秒立即移除並同步右側與毛利預覽
+        
         item.images.splice(cIdx, 1);
         if (item.currentImageIdx >= item.images.length) {
           item.currentImageIdx = Math.max(0, item.images.length - 1);
@@ -5143,7 +5358,7 @@
         this.renderBlocks();
         this.renderTable();
 
-        // 背景默默刪除雲端檔案與同步寫入試算表
+        
         if (imgUrl && imgUrl.startsWith('http')) {
           ApiQueue.sendRequest('deleteImageFromDrive', { imageUrl: imgUrl }).catch(() => {});
         }
@@ -5318,7 +5533,7 @@
               dimUnit: 'cm',
               l: '', w: '', h: ''
             }));
-            // 保留右側已儲存項目，僅刷新左側 AI 草稿供設計師審閱導入
+            
             this.renderBlocks();
             SaveStatus.setSaved('AI 報價草稿已就緒');
             Toast.show('AI 報價草稿已生成於左側，確認後請點「導入右側」加入總表');
@@ -6560,7 +6775,7 @@
           return `
             <div class="a4-sheet">
               <div class="a4-cover-page">
-                <img src="https://drive.google.com/thumbnail?id=1oQ6yFAMzJCBoGG_KFpbkbLVcIe61ASv9&sz=w1000" alt="暮川設計 LOGO" class="cover-emblem-badge" style="object-fit:contain; border:none; padding:0; background:transparent;">
+                <img src="https:
                 <div class="cover-mid-project-block">
                   <div class="cover-mid-project-title">${p.siteName || '未命名案場'}</div>
                   <div class="cover-mid-line"></div>
@@ -6579,7 +6794,7 @@
             </div>
           `;
         } 
-        // 2. 設計合約內文 (完整 3 頁)
+        
         else if (tabKey === 'design_body') {
           return `
             <!-- ================= 設計合約內文 第 1 頁 ================= -->
