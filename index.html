@@ -129,6 +129,129 @@
     .select-minimal:hover { border-bottom-width: 2px; }
 
      
+    .project-picker-wrap {
+      position: relative;
+      min-width: 260px;
+      max-width: 100%;
+      flex: 1 1 auto;
+    }
+    .project-picker-trigger {
+      width: 100%;
+      min-height: 40px;
+      border: none;
+      border-bottom: 1px solid var(--line-dark);
+      background: #FFFFFF;
+      color: var(--text-primary);
+      padding: 6px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.92rem;
+      transition: border-color 0.2s ease;
+    }
+    .project-picker-trigger:hover {
+      border-bottom-width: 2px;
+    }
+    .project-picker-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .project-picker-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      width: 100%;
+      min-width: 320px;
+      max-width: 92vw;
+      max-height: 360px;
+      overflow-y: auto;
+      background: #FFFFFF;
+      border: 1px solid var(--line-dark);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+      z-index: 10060;
+      display: none;
+    }
+    .project-picker-menu.active {
+      display: block;
+    }
+    .project-picker-group {
+      padding: 8px 14px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      background: #FAFAFA;
+      border-bottom: 1px solid var(--line-light);
+    }
+    .project-picker-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #F0F0F0;
+      cursor: pointer;
+      background: #FFFFFF;
+      transition: background 0.15s ease;
+    }
+    .project-picker-item:last-child {
+      border-bottom: none;
+    }
+    .project-picker-item:hover {
+      background: #FAFAFA;
+    }
+    .project-picker-item.is-selected {
+      background: #FAFAFA;
+      font-weight: 600;
+      border-left: 3px solid var(--line-dark);
+    }
+    .project-picker-item-text {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+    .project-picker-del {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .project-picker-del:hover {
+      color: #ff4d4f;
+      border-color: #ff4d4f;
+      background: #fff1f0;
+    }
+    @media (max-width: 1023px) {
+      .project-picker-wrap {
+        width: 100%;
+        min-width: 0;
+      }
+      .project-picker-menu {
+        left: 0;
+        right: 0;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+      }
+    }
+
+     
     .project-info-accordion {
       border: 1px solid var(--line-light);
       background: #FFFFFF;
@@ -1217,9 +1340,16 @@
       
       <div style="width: 1px; height: 20px; background-color: var(--line-light); margin: 0 4px;"></div>
       
-      <select id="select-active-project" class="select-minimal">
-        <option value="">選擇專案...</option>
-      </select>
+      <div id="project-picker-wrap" class="project-picker-wrap">
+        <button type="button" id="project-picker-trigger" class="project-picker-trigger" onclick="ProjectPicker.toggle()" title="切換或刪除案場選項">
+          <span id="project-picker-label" class="project-picker-label">選擇專案或待丈量客戶...</span>
+          <i data-lucide="chevron-down" style="width:16px; height:16px; flex-shrink:0;"></i>
+        </button>
+        <div id="project-picker-menu" class="project-picker-menu"></div>
+        <select id="select-active-project" class="select-minimal" style="display:none;">
+          <option value="">選擇專案...</option>
+        </select>
+      </div>
       </div>
     </div>
 
@@ -3955,8 +4085,11 @@
         if (sel && pId) {
           const opt = Array.from(sel.options).find(o => o.value === pId);
           if (opt) {
-            const labelName = info.siteName || info.name || '未填寫名稱';
+            const labelName = info.siteName ? `${info.siteName} (${info.name || '未填寫姓名'})` : (info.name || '未填寫名稱');
             opt.textContent = `${pId} - ${labelName} - ${info.type || '未填寫類型'}`;
+          }
+          if (typeof ProjectPicker !== 'undefined') {
+            ProjectPicker.updateLabelById(pId, info);
           }
         }
 
@@ -8217,9 +8350,22 @@
               html += '</optgroup>';
             }
 
-            if (res.projects && res.projects.length > 0) {
+            ProjectPicker.hydrate(res.projects || [], res.inquiries || [], res.hiddenProjects || []);
+            const visibleProjects = ProjectPicker.getVisibleProjects();
+            const visibleInquiries = ProjectPicker.getVisibleInquiries();
+
+            html = '<option value="">選擇專案或待丈量客戶...</option>';
+            if (visibleInquiries.length > 0) {
+              html += '<optgroup label="【待丈量】新客戶進線">';
+              visibleInquiries.forEach(iq => {
+                html += `<option value="${iq.id}" data-type="inquiry" data-name="${iq.name}" data-phone="${iq.phone}" data-address="${iq.address || ''}">[新進線] ${iq.name} - ${iq.phone}</option>`;
+              });
+              html += '</optgroup>';
+            }
+
+            if (visibleProjects.length > 0) {
               html += '<optgroup label="【進行中】工程專案">';
-              res.projects.forEach(p => {
+              visibleProjects.forEach(p => {
                 let cleanSite = String(p.siteName || '').trim();
                 let cleanName = String(p.name || '未填寫姓名').trim();
                 let cleanType = String(p.type || '未填寫類型').trim();
@@ -8229,16 +8375,20 @@
               html += '</optgroup>';
             }
             if (sel) sel.innerHTML = html;
+            ProjectPicker.renderMenu();
             
-            if (targetProjectId && sel) {
-              sel.value = targetProjectId;
-              sel.dispatchEvent(new Event('change'));
+            if (targetProjectId && !ProjectPicker.isHidden(targetProjectId) && sel) {
+              ProjectPicker.select(targetProjectId, false);
             } else {
               if (sel) sel.value = '';
+              ProjectPicker.syncTriggerLabel('');
               this.resetWorkspace();
             }
           } else {
+            ProjectPicker.hydrate([], [], (res && res.hiddenProjects) || []);
+            ProjectPicker.renderMenu();
             if (sel) sel.innerHTML = '<option value="">選擇專案或待丈量客戶...</option>';
+            ProjectPicker.syncTriggerLabel('');
             this.resetWorkspace();
           }
         } catch (err) {
@@ -8281,9 +8431,212 @@
       }
     };
 
+    const ProjectPicker = {
+      LS_KEY: 'muhouse_hidden_projects_v1',
+      projects: [],
+      inquiries: [],
+      hiddenIds: [],
+      isOpen: false,
+
+      getLocalHidden() {
+        try {
+          const arr = JSON.parse(localStorage.getItem(this.LS_KEY) || '[]');
+          return Array.isArray(arr) ? arr.map(x => String(x || '').trim()).filter(Boolean) : [];
+        } catch (e) {
+          return [];
+        }
+      },
+
+      saveLocalHidden(list) {
+        try {
+          localStorage.setItem(this.LS_KEY, JSON.stringify(list));
+        } catch (e) {}
+      },
+
+      hydrate(projects, inquiries, serverHidden) {
+        this.projects = Array.isArray(projects) ? projects : [];
+        this.inquiries = Array.isArray(inquiries) ? inquiries : [];
+        const merged = new Set([
+          ...this.getLocalHidden(),
+          ...(Array.isArray(serverHidden) ? serverHidden.map(x => String(x || '').trim()).filter(Boolean) : [])
+        ]);
+        this.hiddenIds = Array.from(merged);
+        this.saveLocalHidden(this.hiddenIds);
+      },
+
+      isHidden(id) {
+        const clean = String(id || '').trim();
+        return Boolean(clean) && this.hiddenIds.includes(clean);
+      },
+
+      getVisibleProjects() {
+        return this.projects.filter(p => !this.isHidden(p.projectId));
+      },
+
+      getVisibleInquiries() {
+        return this.inquiries.filter(iq => !this.isHidden(iq.id));
+      },
+
+      formatProjectLabel(p) {
+        const cleanSite = String(p.siteName || '').trim();
+        const cleanName = String(p.name || '未填寫姓名').trim();
+        const cleanType = String(p.type || '未填寫類型').trim();
+        const labelName = cleanSite ? `${cleanSite} (${cleanName})` : cleanName;
+        return `${p.projectId} - ${labelName} - ${cleanType}`;
+      },
+
+      toggle() {
+        this.isOpen = !this.isOpen;
+        const menu = document.getElementById('project-picker-menu');
+        if (menu) {
+          if (this.isOpen) this.renderMenu();
+          menu.classList.toggle('active', this.isOpen);
+        }
+      },
+
+      close() {
+        this.isOpen = false;
+        const menu = document.getElementById('project-picker-menu');
+        if (menu) menu.classList.remove('active');
+      },
+
+      syncTriggerLabel(id) {
+        const labelEl = document.getElementById('project-picker-label');
+        if (!labelEl) return;
+        const clean = String(id || '').trim();
+        if (!clean) {
+          labelEl.textContent = '選擇專案或待丈量客戶...';
+          return;
+        }
+        const proj = this.projects.find(p => String(p.projectId) === clean);
+        if (proj) {
+          labelEl.textContent = this.formatProjectLabel(proj);
+          return;
+        }
+        const inq = this.inquiries.find(iq => String(iq.id) === clean);
+        if (inq) {
+          labelEl.textContent = `[新進線] ${inq.name} - ${inq.phone}`;
+          return;
+        }
+        const sel = document.getElementById('select-active-project');
+        if (sel) {
+          const opt = Array.from(sel.options).find(o => o.value === clean);
+          if (opt) labelEl.textContent = opt.textContent;
+        }
+      },
+
+      updateLabelById(pId, info) {
+        const idx = this.projects.findIndex(p => String(p.projectId) === String(pId));
+        if (idx !== -1) {
+          this.projects[idx] = { ...this.projects[idx], ...info };
+        } else {
+          this.projects.push({ projectId: pId, ...info });
+        }
+        this.syncTriggerLabel(pId);
+        if (this.isOpen) this.renderMenu();
+      },
+
+      select(id, shouldClose = true) {
+        const sel = document.getElementById('select-active-project');
+        if (sel) {
+          sel.value = id;
+          sel.dispatchEvent(new Event('change'));
+        }
+        this.syncTriggerLabel(id);
+        if (shouldClose) this.close();
+      },
+
+      async hideOption(targetId, btn) {
+        const clean = String(targetId || '').trim();
+        if (!clean) return;
+
+        // 1. 樂觀 UI：立即加入永久隱藏清單（本地 + 後端雙重鎖定，日後永不顯示）
+        if (!this.hiddenIds.includes(clean)) {
+          this.hiddenIds.push(clean);
+          this.saveLocalHidden(this.hiddenIds);
+        }
+
+        const sel = document.getElementById('select-active-project');
+        if (sel) {
+          const opt = Array.from(sel.options).find(o => o.value === clean);
+          if (opt) opt.remove();
+        }
+
+        // 若刪除的剛好是目前選中的專案，立即重置工作區回乾淨空白
+        if (String(StateStore.get('activeProject')) === clean || (sel && sel.value === clean)) {
+          if (sel) sel.value = '';
+          this.syncTriggerLabel('');
+          AppMode.resetWorkspace();
+        }
+
+        this.renderMenu();
+        Toast.show('已移除該案場選項，日後將不再顯示');
+
+        // 2. 背景同步至試算表 ScriptProperties，確保跨裝置與重新整理後皆永久不顯示
+        try {
+          await ApiQueue.sendRequest('hideProjectOption', { targetId: clean });
+        } catch (err) {
+          console.warn('後端隱藏狀態同步略過:', err);
+        }
+      },
+
+      renderMenu() {
+        const menu = document.getElementById('project-picker-menu');
+        if (!menu) return;
+        const activeId = String(StateStore.get('activeProject') || '');
+        const vInq = this.getVisibleInquiries();
+        const vProj = this.getVisibleProjects();
+
+        if (vInq.length === 0 && vProj.length === 0) {
+          menu.innerHTML = `<div style="padding:20px 16px; text-align:center; color:var(--text-muted); font-size:0.88rem;">目前無可選專案（可點擊左側 ＋ 新建）</div>`;
+          return;
+        }
+
+        let html = '';
+        if (vInq.length > 0) {
+          html += `<div class="project-picker-group">【待丈量】新客戶進線</div>`;
+          html += vInq.map(iq => {
+            const safeId = AudioManager.escapeHtml(iq.id);
+            const label = AudioManager.escapeHtml(`[新進線] ${iq.name} - ${iq.phone}`);
+            return `
+              <div class="project-picker-item" onclick="ProjectPicker.select('${safeId}')">
+                <span class="project-picker-item-text">${label}</span>
+                <button type="button" class="project-picker-del" onclick="event.stopPropagation(); UIConfirm.bind(this, '移除?', () => ProjectPicker.hideOption('${safeId}', this))" title="永久移除此選項">
+                  <i data-lucide="x" style="width:15px; height:15px;"></i>
+                </button>
+              </div>
+            `;
+          }).join('');
+        }
+
+        if (vProj.length > 0) {
+          html += `<div class="project-picker-group">【進行中】工程專案</div>`;
+          html += vProj.map(p => {
+            const safeId = AudioManager.escapeHtml(p.projectId);
+            const label = AudioManager.escapeHtml(this.formatProjectLabel(p));
+            const isSel = String(p.projectId) === activeId;
+            return `
+              <div class="project-picker-item ${isSel ? 'is-selected' : ''}" onclick="ProjectPicker.select('${safeId}')">
+                <span class="project-picker-item-text">${label}</span>
+                <button type="button" class="project-picker-del" onclick="event.stopPropagation(); UIConfirm.bind(this, '移除?', () => ProjectPicker.hideOption('${safeId}', this))" title="永久移除此選項">
+                  <i data-lucide="x" style="width:15px; height:15px;"></i>
+                </button>
+              </div>
+            `;
+          }).join('');
+        }
+
+        menu.innerHTML = html;
+        if (typeof RedrawIcons === 'function') RedrawIcons();
+      }
+    };
+
     document.addEventListener('click', (e) => {
       if (!e.target.closest('[data-audio-accordion="true"]')) {
         AudioManager.collapseAllAccordions();
+      }
+      if (!e.target.closest('#project-picker-wrap')) {
+        ProjectPicker.close();
       }
     });
 
